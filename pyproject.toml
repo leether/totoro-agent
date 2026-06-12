@@ -1,0 +1,17 @@
+[project]
+name = "longcat-agent"
+version = "0.2.0"
+description = "LongCat Coding Agent — AI-powered coding assistant with tool use"
+requires-python = ">=3.11"
+dependencies = [
+    "httpx>=0.27.0",
+]
+
+[project.optional-dependencies]
+api = ["fastapi>=0.110", "uvicorn>=0.29", "sse-starlette>=2.0"]
+repl = ["prompt_toolkit>=3.0", "rich>=13.0"]
+all = ["fastapi>=0.110", "uvicorn>=0.29", "sse-starlette>=2.0", "prompt_toolkit>=3.0", "rich>=13.0"]
+
+[project.scripts]
+longcat = "longcat_agent:main"
+longcat-repl = "cli.repl:main"
