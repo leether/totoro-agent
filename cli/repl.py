@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
+import os
 import sys
 import uuid
 from pathlib import Path
@@ -85,7 +87,7 @@ def _display_welcome(settings: AgentSettings, project_path: str) -> None:
     table = Table(show_header=False, box=None, padding=(0, 1))
     table.add_column("key", style="bold")
     table.add_column("value")
-    table.add_row("Provider", f"[{AGENT_COLOR}]{settings.resolve_provider()}[/]")
+    table.add_row("Provider", f"[{AGENT_COLOR}]{_display_provider(settings.resolve_provider())}[/]")
     table.add_row("Project", f"[{AGENT_COLOR}]{project_path}[/]")
     table.add_row("Tools", f"[{AGENT_COLOR}]{settings.tool_preset}[/]")
     table.add_row("Model", f"[{AGENT_COLOR}]{_get_model(settings)}[/]")
@@ -111,6 +113,19 @@ def _get_model(settings: AgentSettings) -> str:
             return settings.anthropic.model
         case _:
             return "(default)"
+
+
+def _display_provider(provider: str) -> str:
+    """返回用于展示的中文/品牌名。"""
+    match provider:
+        case "totoro":
+            return "LongCat"
+        case "openai":
+            return "OpenAI"
+        case "anthropic":
+            return "Anthropic"
+        case _:
+            return provider
 
 
 def _display_tool_header(count: int, tool_name: str) -> None:
@@ -208,7 +223,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="LongCat Coding Agent REPL")
     parser.add_argument("project_path", nargs="?", default=".", help="项目路径（默认当前目录）")
     parser.add_argument(
-        "--provider", "-p", default=None, help="Provider: longcat / openai / anthropic"
+        "--provider", "-p", default=None, help="Provider: totoro (LongCat) / openai / anthropic"
     )
     parser.add_argument(
         "--tools", "-t", default=None, choices=["core", "full", "readonly"], help="工具预设"
@@ -224,6 +239,26 @@ def main() -> None:
     asyncio.run(run_repl(settings, args.project_path))
 
 
+def _ask_user(prompt: str) -> str:
+    """在独立线程中读取用户输入，临时把 stdin 设为阻塞模式。
+
+    asyncio 事件循环在 Unix 上会把 stdin 设为非阻塞，而内置 :func:`input`
+    需要阻塞 stdin，否则读取到的字节不完整会抛出 UnicodeDecodeError。
+    """
+    stdin_fd = sys.stdin.fileno()
+    was_nonblocking = False
+    with contextlib.suppress(OSError, AttributeError):
+        was_nonblocking = not os.get_blocking(stdin_fd)
+    if was_nonblocking:
+        os.set_blocking(stdin_fd, True)
+    try:
+        return Prompt.ask(prompt)
+    finally:
+        if was_nonblocking:
+            with contextlib.suppress(OSError):
+                os.set_blocking(stdin_fd, False)
+
+
 async def run_repl(settings: AgentSettings, project_path: str = ".") -> None:
     """启动交互式 REPL。"""
     project_path = str(Path(project_path).resolve())
@@ -234,7 +269,7 @@ async def run_repl(settings: AgentSettings, project_path: str = ".") -> None:
 
     while True:
         try:
-            user_input = await asyncio.to_thread(Prompt.ask, f"\n[bold {USER_COLOR}]❯ User[/]")
+            user_input = await asyncio.to_thread(_ask_user, f"\n[bold {USER_COLOR}]❯ User[/]")
             user_input = user_input.strip()
         except (EOFError, KeyboardInterrupt):
             _console.print("\n[dim]Bye![/]")

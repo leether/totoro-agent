@@ -108,7 +108,7 @@ def cmd_status() -> None:
     key_status = "✅ 已设置" if key_set else "❌ 未设置"
 
     print("🐾 Totoro Agent 配置")
-    print(f"  Provider:    {provider}")
+    print(f"  Provider:    {_display_provider(provider)}")
     print(f"  Model:       {model}")
     print(f"  Tool preset: {settings.tool_preset}")
     print(f"  Max iter:    {settings.max_iterations}")
@@ -129,6 +129,19 @@ def _get_model(settings: object) -> str:
             return settings.anthropic.model  # type: ignore[attr-defined, no-any-return]
         case _:
             return "(default)"
+
+
+def _display_provider(provider: str) -> str:
+    """返回用于展示的中文/品牌名。"""
+    match provider:
+        case "totoro":
+            return "LongCat"
+        case "openai":
+            return "OpenAI"
+        case "anthropic":
+            return "Anthropic"
+        case _:
+            return provider
 
 
 def main() -> None:
