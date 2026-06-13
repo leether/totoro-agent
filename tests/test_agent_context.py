@@ -1,4 +1,5 @@
 """测试 agent/context.py — ContextManager 和 Session。"""
+
 from unittest.mock import MagicMock
 
 from agent.context import ContextManager, Session
@@ -48,9 +49,11 @@ class TestSession:
 class TestContextManager:
     def test_build_messages_basic(self):
         ctx = ContextManager(system_prompt="You are a helper.")
-        messages = ctx.build_messages([
-            {"role": "user", "content": "Hello"},
-        ])
+        messages = ctx.build_messages(
+            [
+                {"role": "user", "content": "Hello"},
+            ]
+        )
         assert len(messages) == 2
         assert messages[0]["role"] == "system"
         assert "You are a helper." in messages[0]["content"]

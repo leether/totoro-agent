@@ -15,9 +15,9 @@ if os.path.exists(_env_file):
             _k, _v = _line.split("=", 1)
             os.environ.setdefault(_k.strip(), _v.strip())
 
-API_KEY  = os.environ.get("LONGCAT_API_KEY", "")
+API_KEY = os.environ.get("LONGCAT_API_KEY", "")
 BASE_URL = "https://api.longcat.chat/anthropic"
-MODEL    = "LongCat-2.0-Preview"
+MODEL = "LongCat-2.0-Preview"
 
 if not API_KEY:
     raise RuntimeError("LONGCAT_API_KEY 未设置，请在 .env 文件中配置")
@@ -27,10 +27,11 @@ client = anthropic.Anthropic(
     api_key=API_KEY,
     base_url=BASE_URL,
     default_headers={
-        "Content-Type":  "application/json",
+        "Content-Type": "application/json",
         "Authorization": f"Bearer {API_KEY}",
     },
 )
+
 
 def chat(user_text: str, system_prompt: str = "你是一个有用的中文助手。") -> str:
     """单轮对话：发送用户消息，返回模型回复文本。"""
@@ -76,7 +77,7 @@ if __name__ == "__main__":
         print('用法: python longcat_agent.py "你的消息" [--stream]')
         sys.exit(1)
 
-    user_msg  = sys.argv[1]
+    user_msg = sys.argv[1]
     use_stream = "--stream" in sys.argv
 
     if use_stream:

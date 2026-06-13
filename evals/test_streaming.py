@@ -2,6 +2,7 @@
 Eval 4: 流式输出 — 两种 SDK 流式模式是否正常
 收集所有流式 chunk，最终拼接文本与非流式一致。
 """
+
 import pytest
 
 from conftest import API_KEY, MODEL
@@ -11,6 +12,7 @@ MESSAGES = [{"role": "user", "content": "请用一句话介绍你自己"}]
 
 def _anthropic_stream():
     import anthropic
+
     client = anthropic.Anthropic(
         api_key=API_KEY,
         base_url="https://api.longcat.chat/anthropic",
@@ -25,10 +27,14 @@ def _anthropic_stream():
 
 def _openai_stream():
     from openai import OpenAI
+
     client = OpenAI(api_key=API_KEY, base_url="https://api.longcat.chat/openai")
     chunks = []
     stream = client.chat.completions.create(
-        model=MODEL, max_tokens=256, stream=True, messages=MESSAGES,
+        model=MODEL,
+        max_tokens=256,
+        stream=True,
+        messages=MESSAGES,
     )
     for chunk in stream:
         delta = chunk.choices[0].delta.content
@@ -54,8 +60,12 @@ def test_stream_nonstream_consistency():
     def ratio(a, b):
         return max(len(a), 1) / max(len(b), 1)
 
-    print(f"\nanthropic: non-stream={len(a_text)} chars, stream={len(a_stream)} chars, ratio={ratio(a_text, a_stream):.2f}")
-    print(f"openai:    non-stream={len(o_text)} chars, stream={len(o_stream)} chars, ratio={ratio(o_text, o_stream):.2f}")
+    print(
+        f"\nanthropic: non-stream={len(a_text)} chars, stream={len(a_stream)} chars, ratio={ratio(a_text, a_stream):.2f}"
+    )
+    print(
+        f"openai:    non-stream={len(o_text)} chars, stream={len(o_stream)} chars, ratio={ratio(o_text, o_stream):.2f}"
+    )
 
     assert 0.5 < ratio(a_text, a_stream) < 2.0
     assert 0.5 < ratio(o_text, o_stream) < 2.0
@@ -63,6 +73,7 @@ def test_stream_nonstream_consistency():
 
 def run_benchmark_safe(sdk, messages=None, max_tokens=256):
     from conftest import run_benchmark
+
     if messages is None:
         messages = MESSAGES
     return run_benchmark(sdk, messages, max_tokens)

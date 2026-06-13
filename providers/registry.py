@@ -1,4 +1,5 @@
 """ProviderRegistry — LLM 后端注册表，支持运行时切换。"""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
@@ -34,8 +35,10 @@ class ProviderRegistry:
 
 def register_provider(name: str) -> Any:
     """装饰器：自动注册 provider 类实例。"""
+
     def decorator(provider_cls: Any) -> Any:
         instance = provider_cls()
         ProviderRegistry.register(name, instance)
         return provider_cls
+
     return decorator

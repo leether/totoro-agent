@@ -1,6 +1,7 @@
 """
 共享 fixtures：为 Anthropic / OpenAI 两种客户端提供统一的评测接口。
 """
+
 import os
 import time
 
@@ -13,12 +14,13 @@ if os.path.exists(_env_file):
             _k, _v = _line.split("=", 1)
             os.environ.setdefault(_k.strip(), _v.strip())
 
-API_KEY  = os.environ["TOTORO_API_KEY"]
-MODEL    = "LongCat-2.0-Preview"
+API_KEY = os.environ["TOTORO_API_KEY"]
+MODEL = "LongCat-2.0-Preview"
 
 
 def _anthropic_call(messages, max_tokens=512):
     import anthropic
+
     client = anthropic.Anthropic(
         api_key=API_KEY,
         base_url="https://api.longcat.chat/anthropic",
@@ -34,12 +36,16 @@ def _anthropic_call(messages, max_tokens=512):
 
 def _openai_call(messages, max_tokens=512):
     from openai import OpenAI
+
     client = OpenAI(api_key=API_KEY, base_url="https://api.longcat.chat/openai")
     t0 = time.perf_counter()
     resp = client.chat.completions.create(model=MODEL, max_tokens=max_tokens, messages=messages)
     latency = time.perf_counter() - t0
     text = resp.choices[0].message.content or ""
-    usage = {"input_tokens": resp.usage.prompt_tokens, "output_tokens": resp.usage.completion_tokens}
+    usage = {
+        "input_tokens": resp.usage.prompt_tokens,
+        "output_tokens": resp.usage.completion_tokens,
+    }
     return text, latency, usage
 
 

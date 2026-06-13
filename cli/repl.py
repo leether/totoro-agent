@@ -1,4 +1,5 @@
 """交互式 REPL — Rich 美化的 Coding Agent 终端界面。"""
+
 from __future__ import annotations
 
 import asyncio
@@ -8,33 +9,38 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from providers.base import ChatProvider
-from rich.console import Console
-from rich.panel import Panel
-from rich.prompt import Prompt
-from rich.syntax import Syntax
-from rich.table import Table
+from typing import TYPE_CHECKING
+
+from rich.console import Console  # type: ignore[import-not-found]
+from rich.panel import Panel  # type: ignore[import-not-found]
+from rich.prompt import Prompt  # type: ignore[import-not-found]
+from rich.syntax import Syntax  # type: ignore[import-not-found]
+from rich.table import Table  # type: ignore[import-not-found]
 
 from agent.context import Session
 from agent.engine import AgentConfig, AgentEngine
 from config import AgentSettings
 from providers.anthropic_provider import AnthropicProvider
+
+if TYPE_CHECKING:
+    from providers.base import ChatProvider
 from providers.openai_provider import OpenAIProvider
 from providers.totoro_provider import TotoroProvider
 from tools.registry import ToolRegistry
 
 # ─── 配色方案 ───────────────────────────────────────────
-AGENT_COLOR = "cyan"        # Agent 名称 & 标题
-USER_COLOR = "green"        # 用户输入
-TOOL_COLOR = "yellow"       # 工具调用
-SUCCESS_COLOR = "green"    # 成功标记
-ERROR_COLOR = "red"        # 错误标记
-CODE_THEME = "monokai"     # 代码高亮主题
+AGENT_COLOR = "cyan"  # Agent 名称 & 标题
+USER_COLOR = "green"  # 用户输入
+TOOL_COLOR = "yellow"  # 工具调用
+SUCCESS_COLOR = "green"  # 成功标记
+ERROR_COLOR = "red"  # 错误标记
+CODE_THEME = "monokai"  # 代码高亮主题
 
 _console = Console()
 
 
 # ─── Tool display detection helpers ─────────────────────
+
 
 def _guess_language(output: str, tool_name: str) -> str:
     """根据工具名和输出内容猜测语言用于语法高亮。"""
@@ -56,14 +62,22 @@ def _display_tool_result(tool_name: str, output: str, output_preview: str) -> No
     if lang in ("python", "javascript", "typescript", "bash", "json"):
         display_text = output if len(output) <= 1500 else output_preview
         syntax = Syntax(display_text, lang, theme=CODE_THEME, line_numbers=(lang == "python"))
-        _console.print(Panel(syntax, title=f"[bold {TOOL_COLOR}]{tool_name}[/]", border_style=TOOL_COLOR))
+        _console.print(
+            Panel(syntax, title=f"[bold {TOOL_COLOR}]{tool_name}[/]", border_style=TOOL_COLOR)
+        )
     elif tool_name == "list_dir":
         # 目录列表直接输出文本
-        _console.print(Panel(output[:2000], title=f"[bold {TOOL_COLOR}]{tool_name}[/]", border_style=TOOL_COLOR))
+        _console.print(
+            Panel(
+                output[:2000], title=f"[bold {TOOL_COLOR}]{tool_name}[/]", border_style=TOOL_COLOR
+            )
+        )
     else:
         # 通用输出：截断 + panel
         display_text = output[:2000] if output else "(empty)"
-        _console.print(Panel(display_text, title=f"[bold {TOOL_COLOR}]{tool_name}[/]", border_style=TOOL_COLOR))
+        _console.print(
+            Panel(display_text, title=f"[bold {TOOL_COLOR}]{tool_name}[/]", border_style=TOOL_COLOR)
+        )
 
 
 def _display_welcome(settings: AgentSettings, project_path: str) -> None:
@@ -102,8 +116,7 @@ def _get_model(settings: AgentSettings) -> str:
 def _display_tool_header(count: int, tool_name: str) -> None:
     """渲染工具调用头。"""
     _console.print(
-        f"\n[bold {TOOL_COLOR}]🔧 [{count}] {tool_name}[/] "
-        f"[dim]executing...[/]",
+        f"\n[bold {TOOL_COLOR}]🔧 [{count}] {tool_name}[/] [dim]executing...[/]",
         end="",
     )
 
@@ -121,11 +134,13 @@ def _display_footer(iterations: int) -> None:
 
 def _display_error(error: str) -> None:
     """渲染错误面板。"""
-    _console.print(Panel(
-        f"[bold {ERROR_COLOR}]{error}[/]",
-        title=f"[bold {ERROR_COLOR}]❌ Error[/]",
-        border_style=ERROR_COLOR,
-    ))
+    _console.print(
+        Panel(
+            f"[bold {ERROR_COLOR}]{error}[/]",
+            title=f"[bold {ERROR_COLOR}]❌ Error[/]",
+            border_style=ERROR_COLOR,
+        )
+    )
 
 
 def _display_thinking() -> None:
@@ -134,6 +149,7 @@ def _display_thinking() -> None:
 
 
 # ─── Setup helpers ───────────────────────────────────────
+
 
 def _build_provider(settings: AgentSettings) -> ChatProvider:
     """根据配置构建 provider。"""
@@ -184,13 +200,19 @@ def _build_engine(settings: AgentSettings, project_path: str = "") -> AgentEngin
 
 # ─── REPL main ───────────────────────────────────────────
 
+
 def main() -> None:
     """CLI 入口: longcat-repl [project_path]."""
     import argparse
+
     parser = argparse.ArgumentParser(description="LongCat Coding Agent REPL")
     parser.add_argument("project_path", nargs="?", default=".", help="项目路径（默认当前目录）")
-    parser.add_argument("--provider", "-p", default=None, help="Provider: longcat / openai / anthropic")
-    parser.add_argument("--tools", "-t", default=None, choices=["core", "full", "readonly"], help="工具预设")
+    parser.add_argument(
+        "--provider", "-p", default=None, help="Provider: longcat / openai / anthropic"
+    )
+    parser.add_argument(
+        "--tools", "-t", default=None, choices=["core", "full", "readonly"], help="工具预设"
+    )
     args = parser.parse_args()
 
     settings = AgentSettings()
@@ -212,9 +234,7 @@ async def run_repl(settings: AgentSettings, project_path: str = ".") -> None:
 
     while True:
         try:
-            user_input = await asyncio.to_thread(
-                Prompt.ask, f"\n[bold {USER_COLOR}]❯ User[/]"
-            )
+            user_input = await asyncio.to_thread(Prompt.ask, f"\n[bold {USER_COLOR}]❯ User[/]")
             user_input = user_input.strip()
         except (EOFError, KeyboardInterrupt):
             _console.print("\n[dim]Bye![/]")

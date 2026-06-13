@@ -1,10 +1,10 @@
 """项目分析工具 — 理解项目结构、依赖、入口文件。"""
-from __future__ import annotations
 
-from typing import Any
+from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 from tools.base import BaseTool, ToolResult
 
@@ -51,7 +51,7 @@ class ProjectSummaryTool(BaseTool):
             # 限制每目录最多 20 个条目
             entries = entries[:20]
             for i, entry in enumerate(entries):
-                is_last = (i == len(entries) - 1)
+                is_last = i == len(entries) - 1
                 connector = "└── " if is_last else "├── "
                 lines.append(f"{prefix}{connector}{entry.name}")
                 if entry.is_dir() and level < 3:
@@ -63,7 +63,15 @@ class ProjectSummaryTool(BaseTool):
 
         # 2. 入口文件检测
         sections.append("\n## 入口文件")
-        entry_patterns = ["main.py", "app.py", "index.js", "index.ts", "manage.py", "setup.py", "pyproject.toml"]
+        entry_patterns = [
+            "main.py",
+            "app.py",
+            "index.js",
+            "index.ts",
+            "manage.py",
+            "setup.py",
+            "pyproject.toml",
+        ]
         found_entries: list[str] = []
         for pat in entry_patterns:
             fp = proj / pat
@@ -97,7 +105,9 @@ class ProjectSummaryTool(BaseTool):
         js_files = list(proj.rglob("*.js"))
         ts_files = list(proj.rglob("*.ts"))
         sections.append("\n## 文件统计")
-        sections.append(f"Python: {len(py_files)}  |  JavaScript: {len(js_files)}  |  TypeScript: {len(ts_files)}")
+        sections.append(
+            f"Python: {len(py_files)}  |  JavaScript: {len(js_files)}  |  TypeScript: {len(ts_files)}"
+        )
 
         output = "\n".join(sections)
         return ToolResult(

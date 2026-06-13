@@ -1,4 +1,5 @@
 """测试 tools/web_tools.py — 网络工具。"""
+
 import pytest
 
 from tools.web_tools import WebFetchTool, WebSearchTool

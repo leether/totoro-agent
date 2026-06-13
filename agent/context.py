@@ -1,13 +1,12 @@
 """ContextManager — 消息历史、Token 管理、压缩、会话持久化。"""
-from __future__ import annotations
 
-from typing import Any
+from __future__ import annotations
 
 import json
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from tools.registry import ToolRegistry
@@ -16,6 +15,7 @@ if TYPE_CHECKING:
 @dataclass
 class Session:
     """会话模型 — 隔离不同用户的 Agent 上下文。"""
+
     id: str
     messages: list[dict[str, Any]] = field(default_factory=list)
     created_at: float = field(default_factory=time.time)
@@ -46,7 +46,9 @@ class Session:
         dir_path = Path(directory)
         dir_path.mkdir(parents=True, exist_ok=True)
         file_path = dir_path / f"{self.id}.json"
-        file_path.write_text(json.dumps(self.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8")
+        file_path.write_text(
+            json.dumps(self.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8"
+        )
         return file_path
 
     @classmethod
@@ -105,6 +107,7 @@ class ContextManager:
             tool_defs = tool_registry.tool_definitions()
             if tool_defs:
                 import json
+
                 system_content += f"\n\n## Available Tools\n```json\n{json.dumps(tool_defs, ensure_ascii=False, indent=2)}\n```"
 
         messages.append({"role": "system", "content": system_content})

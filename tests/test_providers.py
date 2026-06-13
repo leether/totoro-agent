@@ -1,4 +1,5 @@
 """测试 providers/ — Provider 注册表和协议。"""
+
 from unittest.mock import MagicMock
 
 import pytest
@@ -107,24 +108,26 @@ class TestProviderInstantiation:
 
     def test_totoro_provider(self):
         from providers.totoro_provider import TotoroProvider
+
         p = TotoroProvider(api_key="test_key")
         assert p._api_key == "test_key"
         assert "longcat.chat" in p._base_url
 
     def test_totoro_provider_default_url(self):
         from providers.totoro_provider import TotoroProvider
+
         p = TotoroProvider(api_key="k")
         assert p._base_url == "https://api.longcat.chat/anthropic/v1/messages"
 
     def test_openai_provider(self):
         from providers.openai_provider import OpenAIProvider
+
         p = OpenAIProvider(api_key="test_key")
         assert p._api_key == "test_key"
         assert "openai.com" in p._base_url
 
     def test_anthropic_provider(self):
         from providers.anthropic_provider import AnthropicProvider
+
         p = AnthropicProvider(api_key="test_key")
         assert p._api_key == "test_key"
-
-

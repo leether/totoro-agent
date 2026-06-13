@@ -1,4 +1,5 @@
 """共享 fixtures — 为所有测试提供公共 mock 和临时目录。"""
+
 import tempfile
 from pathlib import Path
 
@@ -47,7 +48,7 @@ class MockProvider(ChatProvider):
         按顺序返回响应。如果元素是 str，自动包装为纯文本 ChatResponse。
         """
         self._responses = []
-        for r in (responses or []):
+        for r in responses or []:
             if isinstance(r, str):
                 self._responses.append(ChatResponse(text=r, usage=TokenUsage()))
             else:
@@ -57,23 +58,27 @@ class MockProvider(ChatProvider):
         self.stream_calls = []  # 记录每次 stream_chat() 的参数
 
     async def chat(self, messages, tools=None, max_tokens=4096, temperature=0.1):
-        self.chat_calls.append({
-            "messages": messages,
-            "tools": tools,
-            "max_tokens": max_tokens,
-            "temperature": temperature,
-        })
+        self.chat_calls.append(
+            {
+                "messages": messages,
+                "tools": tools,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            }
+        )
         idx = min(self._call_count, len(self._responses) - 1)
         self._call_count += 1
         return self._responses[idx]
 
     async def stream_chat(self, messages, tools=None, max_tokens=4096, temperature=0.1):
-        self.stream_calls.append({
-            "messages": messages,
-            "tools": tools,
-            "max_tokens": max_tokens,
-            "temperature": temperature,
-        })
+        self.stream_calls.append(
+            {
+                "messages": messages,
+                "tools": tools,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            }
+        )
         idx = min(self._call_count, len(self._responses) - 1)
         self._call_count += 1
         resp = self._responses[idx]

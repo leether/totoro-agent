@@ -2,13 +2,12 @@
 
 LongCat API 兼容 Anthropic 的 /v1/messages 接口格式，直接 HTTP 调用。
 """
-from __future__ import annotations
 
-from typing import Any
+from __future__ import annotations
 
 import json
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import httpx
 
@@ -75,11 +74,13 @@ class TotoroProvider:
             if btype == "text" and block.get("text"):
                 text_parts.append(block["text"])
             elif btype == "tool_use":
-                tool_calls.append(ToolCall(
-                    id=block.get("id", ""),
-                    name=block.get("name", ""),
-                    arguments=block.get("input", {}),
-                ))
+                tool_calls.append(
+                    ToolCall(
+                        id=block.get("id", ""),
+                        name=block.get("name", ""),
+                        arguments=block.get("input", {}),
+                    )
+                )
 
         usage = data.get("usage", {})
         return ChatResponse(
@@ -170,76 +171,83 @@ class TotoroProvider:
         if tools:
             payload["tools"] = self._serialize_tools(tools)
 
-        async with httpx.AsyncClient(timeout=self._timeout) as client, client.stream(
-            "POST",
-            self._base_url,
-            headers=self._headers(stream=True),
-            json=payload,
-        ) as resp:
-                resp.raise_for_status()
+        async with (
+            httpx.AsyncClient(timeout=self._timeout) as client,
+            client.stream(
+                "POST",
+                self._base_url,
+                headers=self._headers(stream=True),
+                json=payload,
+            ) as resp,
+        ):
+            resp.raise_for_status()
 
-                # 收集增量状态
-                text_buffer = ""
-                current_tool_name = ""
-                current_tool_args_buffer = ""
-                collecting_tool_args = False
+            # 收集增量状态
+            text_buffer = ""
+            current_tool_name = ""
+            current_tool_args_buffer = ""
+            collecting_tool_args = False
 
-                async for line in resp.aiter_lines():
-                    if not line:
-                        continue
+            async for line in resp.aiter_lines():
+                if not line:
+                    continue
 
-                    event = self._parse_sse_event(line)
-                    if event is None:
-                        continue
+                event = self._parse_sse_event(line)
+                if event is None:
+                    continue
 
-                    etype = event.get("type")
+                etype = event.get("type")
 
-                    if etype == "content_block_start":
-                        block = event.get("content_block", {})
-                        if block.get("type") == "text":
-                            pass  # 等 delta
-                        elif block.get("type") == "tool_use":
-                            block.get("id", "")
-                            current_tool_name = block.get("name", "")
-                            current_tool_args_buffer = ""
-                            collecting_tool_args = True
+                if etype == "content_block_start":
+                    block = event.get("content_block", {})
+                    if block.get("type") == "text":
+                        pass  # 等 delta
+                    elif block.get("type") == "tool_use":
+                        block.get("id", "")
+                        current_tool_name = block.get("name", "")
+                        current_tool_args_buffer = ""
+                        collecting_tool_args = True
 
-                    elif etype == "content_block_delta":
-                        delta = event.get("delta", {})
-                        dtype = delta.get("type")
-                        if dtype == "text_delta" and delta.get("text"):
-                            text_buffer += delta["text"]
-                            yield StreamEvent(type="text_delta", content=delta["text"])
-                        elif dtype == "input_json_delta" and collecting_tool_args:
-                            current_tool_args_buffer += delta.get("partial_json", "")
+                elif etype == "content_block_delta":
+                    delta = event.get("delta", {})
+                    dtype = delta.get("type")
+                    if dtype == "text_delta" and delta.get("text"):
+                        text_buffer += delta["text"]
+                        yield StreamEvent(type="text_delta", content=delta["text"])
+                    elif dtype == "input_json_delta" and collecting_tool_args:
+                        current_tool_args_buffer += delta.get("partial_json", "")
 
-                    elif etype == "content_block_stop":
-                        if current_tool_name:
-                            try:
-                                args = json.loads(current_tool_args_buffer) if current_tool_args_buffer else {}
-                            except json.JSONDecodeError:
-                                args = {}
-                            yield StreamEvent(
-                                type="tool_call_start",
-                                tool_name=current_tool_name,
-                                tool_arguments=args,
+                elif etype == "content_block_stop":
+                    if current_tool_name:
+                        try:
+                            args = (
+                                json.loads(current_tool_args_buffer)
+                                if current_tool_args_buffer
+                                else {}
                             )
-                            current_tool_name = ""
-                            collecting_tool_args = False
-
-                    elif etype == "message_delta":
-                        event.get("delta", {}).get("stop_reason")
-                        usage = event.get("usage", {})
+                        except json.JSONDecodeError:
+                            args = {}
                         yield StreamEvent(
-                            type="done",
-                            usage=TokenUsage(
-                                input_tokens=usage.get("input_tokens", 0),
-                                output_tokens=usage.get("output_tokens", 0),
-                            ),
+                            type="tool_call_start",
+                            tool_name=current_tool_name,
+                            tool_arguments=args,
                         )
+                        current_tool_name = ""
+                        collecting_tool_args = False
 
-                    elif etype == "message_stop":
-                        yield StreamEvent(type="done")
+                elif etype == "message_delta":
+                    event.get("delta", {}).get("stop_reason")
+                    usage = event.get("usage", {})
+                    yield StreamEvent(
+                        type="done",
+                        usage=TokenUsage(
+                            input_tokens=usage.get("input_tokens", 0),
+                            output_tokens=usage.get("output_tokens", 0),
+                        ),
+                    )
+
+                elif etype == "message_stop":
+                    yield StreamEvent(type="done")
 
     # ---------- Provider 协议：让 Registry 能实例化 ----------
 

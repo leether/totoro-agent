@@ -1,10 +1,10 @@
 """文件操作工具 — read / write / edit / list / search。"""
-from __future__ import annotations
 
-from typing import Any
+from __future__ import annotations
 
 import re
 from pathlib import Path
+from typing import Any
 
 from tools.base import BaseTool, ToolResult
 
@@ -175,7 +175,11 @@ class EditFileTool(BaseTool):
         return ToolResult(
             success=True,
             output=f"文件已编辑: {path}",
-            metadata={"path": str(path), "original_length": len(content), "new_length": len(new_content)},
+            metadata={
+                "path": str(path),
+                "original_length": len(content),
+                "new_length": len(new_content),
+            },
         )
 
 
@@ -223,7 +227,7 @@ class ListDirTool(BaseTool):
                 return
             entries = sorted(p.iterdir(), key=lambda e: (not e.is_dir(), e.name))
             for i, entry in enumerate(entries):
-                is_last = (i == len(entries) - 1)
+                is_last = i == len(entries) - 1
                 connector = "└── " if is_last else "├── "
                 lines.append(f"{prefix}{connector}{entry.name}")
                 if entry.is_dir() and level < depth:

@@ -2,14 +2,13 @@
 
 流程：User Input → Context Manager → LLM → Tool Call → 工具执行 → 结果回注 → 循环直到完成。
 """
-from __future__ import annotations
 
-from typing import Any
+from __future__ import annotations
 
 import json
 import uuid
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from agent.context import ContextManager, Session
 from providers.base import ChatProvider, ToolCall, ToolCallDefinition
@@ -51,6 +50,7 @@ You are Totoro Coding Agent, an expert software engineer and coding assistant.
 @dataclass
 class AgentResponse:
     """Agent 最终响应。"""
+
     session_id: str
     message: str
     tool_calls: list[dict[str, Any]] = field(default_factory=list)
@@ -62,6 +62,7 @@ class AgentResponse:
 @dataclass
 class AgentConfig:
     """Agent 配置。"""
+
     max_iterations: int = 50
     max_tokens: int = 4096
     temperature: float = 0.1
@@ -172,10 +173,12 @@ class AgentEngine:
 
             # 如果是 text only → 任务完成
             if llm_response.text and not llm_response.tool_calls:
-                session.messages.append({
-                    "role": "assistant",
-                    "content": llm_response.text,
-                })
+                session.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": llm_response.text,
+                    }
+                )
                 usage_dict = {
                     "input_tokens": llm_response.usage.input_tokens,
                     "output_tokens": llm_response.usage.output_tokens,
@@ -201,60 +204,77 @@ class AgentEngine:
 
                 for tool_call in llm_response.tool_calls:
                     # 将 tool_call 加入历史
-                    session.messages.append({
-                        "role": "assistant",
-                        "content": "",
-                        "tool_calls": [{
+                    session.messages.append(
+                        {
+                            "role": "assistant",
+                            "content": "",
+                            "tool_calls": [
+                                {
+                                    "id": tool_call.id,
+                                    "type": "function",
+                                    "function": {
+                                        "name": tool_call.name,
+                                        "arguments": json.dumps(
+                                            tool_call.arguments, ensure_ascii=False
+                                        ),
+                                    },
+                                }
+                            ],
+                        }
+                    )
+
+                    # 执行工具
+                    result = await self._execute_tool(tool_call)
+
+                    total_tool_calls.append(
+                        {
+                            "tool": tool_call.name,
+                            "arguments": tool_call.arguments,
+                            "success": result.success,
+                            "output_preview": result.output[:200],
+                        }
+                    )
+
+                    # 将工具结果注入历史
+                    session.messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": tool_call.id,
+                            "content": result.to_message(),
+                        }
+                    )
+
+                    # 保存 tool_call 到 assistant message
+                    assistant_msg["tool_calls"] = [
+                        {  # type: ignore[assignment]
                             "id": tool_call.id,
                             "type": "function",
                             "function": {
                                 "name": tool_call.name,
                                 "arguments": json.dumps(tool_call.arguments, ensure_ascii=False),
                             },
-                        }],
-                    })
-
-                    # 执行工具
-                    result = await self._execute_tool(tool_call)
-
-                    total_tool_calls.append({
-                        "tool": tool_call.name,
-                        "arguments": tool_call.arguments,
-                        "success": result.success,
-                        "output_preview": result.output[:200],
-                    })
-
-                    # 将工具结果注入历史
-                    session.messages.append({
-                        "role": "tool",
-                        "tool_call_id": tool_call.id,
-                        "content": result.to_message(),
-                    })
-
-                    # 保存 tool_call 到 assistant message
-                    assistant_msg["tool_calls"] = [{  # type: ignore[assignment]
-                        "id": tool_call.id,
-                        "type": "function",
-                        "function": {
-                            "name": tool_call.name,
-                            "arguments": json.dumps(tool_call.arguments, ensure_ascii=False),
-                        },
-                    }]
+                        }
+                    ]
 
                     # 压缩检查
                     session.messages = self._context.compress_history(session.messages)
 
             # 只有 text 没有 tool_calls → 也完成
             if not llm_response.tool_calls and llm_response.text:
-                session.messages.append({
-                    "role": "assistant",
-                    "content": llm_response.text,
-                })
+                session.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": llm_response.text,
+                    }
+                )
                 return AgentResponse(
                     session_id=session.id,
                     message=llm_response.text,
                     tool_calls=total_tool_calls,
-                    usage={"input_tokens": llm_response.usage.input_tokens, "output_tokens": llm_response.usage.output_tokens},
+                    usage={
+                        "input_tokens": llm_response.usage.input_tokens,
+                        "output_tokens": llm_response.usage.output_tokens,
+                    },
                     iterations=iterations,
                     finished=True,
                 )
@@ -312,12 +332,18 @@ class AgentEngine:
                     yield {"type": "text_delta", "content": event.content}
 
                 elif event.type == "tool_call_start":
-                    pending_tool_calls.append(ToolCall(
-                        id=f"call_{uuid.uuid4().hex[:8]}",
-                        name=event.tool_name,
-                        arguments=event.tool_arguments,
-                    ))
-                    yield {"type": "tool_call_start", "tool": event.tool_name, "arguments": event.tool_arguments}
+                    pending_tool_calls.append(
+                        ToolCall(
+                            id=f"call_{uuid.uuid4().hex[:8]}",
+                            name=event.tool_name,
+                            arguments=event.tool_arguments,
+                        )
+                    )
+                    yield {
+                        "type": "tool_call_start",
+                        "tool": event.tool_name,
+                        "arguments": event.tool_arguments,
+                    }
 
                 elif event.type == "done":
                     yield {"type": "done", "usage": event.usage}
@@ -340,23 +366,31 @@ class AgentEngine:
                     "output": result.output[:500],
                 }
 
-                session.messages.append({
-                    "role": "assistant",
-                    "content": "",
-                    "tool_calls": [{
-                        "id": tool_call.id,
-                        "type": "function",
-                        "function": {
-                            "name": tool_call.name,
-                            "arguments": json.dumps(tool_call.arguments, ensure_ascii=False),
-                        },
-                    }],
-                })
-                session.messages.append({
-                    "role": "tool",
-                    "tool_call_id": tool_call.id,
-                    "content": result.to_message(),
-                })
+                session.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": "",
+                        "tool_calls": [
+                            {
+                                "id": tool_call.id,
+                                "type": "function",
+                                "function": {
+                                    "name": tool_call.name,
+                                    "arguments": json.dumps(
+                                        tool_call.arguments, ensure_ascii=False
+                                    ),
+                                },
+                            }
+                        ],
+                    }
+                )
+                session.messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "content": result.to_message(),
+                    }
+                )
 
             session.messages = self._context.compress_history(session.messages)
 

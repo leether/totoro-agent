@@ -1,26 +1,41 @@
 """测试 tools/registry.py — ToolRegistry。"""
+
 from tools.base import BaseTool, ToolResult
 from tools.registry import ToolRegistry
 
 
 class _ToolA(BaseTool):
     @property
-    def name(self): return "tool_a"
+    def name(self):
+        return "tool_a"
+
     @property
-    def description(self): return "Tool A"
+    def description(self):
+        return "Tool A"
+
     @property
-    def parameters_schema(self): return {"type": "object", "properties": {}}
-    async def execute(self, **kw): return ToolResult(success=True, output="a")
+    def parameters_schema(self):
+        return {"type": "object", "properties": {}}
+
+    async def execute(self, **kw):
+        return ToolResult(success=True, output="a")
 
 
 class _ToolB(BaseTool):
     @property
-    def name(self): return "tool_b"
+    def name(self):
+        return "tool_b"
+
     @property
-    def description(self): return "Tool B"
+    def description(self):
+        return "Tool B"
+
     @property
-    def parameters_schema(self): return {"type": "object", "properties": {}}
-    async def execute(self, **kw): return ToolResult(success=True, output="b")
+    def parameters_schema(self):
+        return {"type": "object", "properties": {}}
+
+    async def execute(self, **kw):
+        return ToolResult(success=True, output="b")
 
 
 class TestToolRegistry:

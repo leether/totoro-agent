@@ -15,9 +15,9 @@ if os.path.exists(_env_file):
             _k, _v = _line.split("=", 1)
             os.environ.setdefault(_k.strip(), _v.strip())
 
-API_KEY  = os.environ.get("LONGCAT_API_KEY", "")
+API_KEY = os.environ.get("LONGCAT_API_KEY", "")
 BASE_URL = "https://api.longcat.chat/openai"  # OpenAI 兼容端点
-MODEL    = "LongCat-2.0-Preview"
+MODEL = "LongCat-2.0-Preview"
 
 if not API_KEY:
     raise RuntimeError("LONGCAT_API_KEY 未设置，请在 .env 文件中配置")
@@ -36,7 +36,7 @@ def chat(user_text: str, system_prompt: str = "你是一个有用的中文助手
         max_tokens=4096,
         messages=[
             {"role": "system", "content": system_prompt},
-            {"role": "user",   "content": user_text},
+            {"role": "user", "content": user_text},
         ],
     )
     return resp.choices[0].message.content or ""
@@ -60,7 +60,7 @@ def stream_chat(user_text: str, system_prompt: str = "你是一个有用的中�
         stream=True,
         messages=[
             {"role": "system", "content": system_prompt},
-            {"role": "user",   "content": user_text},
+            {"role": "user", "content": user_text},
         ],
     )
     for chunk in stream:
@@ -78,7 +78,7 @@ if __name__ == "__main__":
         print('用法: python longcat_agent_openai.py "你的消息" [--stream]')
         sys.exit(1)
 
-    user_msg   = sys.argv[1]
+    user_msg = sys.argv[1]
     use_stream = "--stream" in sys.argv
 
     if use_stream:

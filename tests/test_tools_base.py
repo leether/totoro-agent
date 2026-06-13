@@ -1,4 +1,5 @@
 """测试 tools/base.py — BaseTool 和 ToolResult。"""
+
 from typing import Any
 
 import pytest

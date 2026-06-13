@@ -1,11 +1,10 @@
 """OpenAI Provider — 基于 httpx 的纯 Python 实现，无 pydantic_core 依赖。"""
-from __future__ import annotations
 
-from typing import Any
+from __future__ import annotations
 
 import json
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import httpx
 
@@ -57,7 +56,9 @@ class OpenAIProvider:
     def _parse_response(self, data: dict[str, Any]) -> ChatResponse:
         choices = data.get("choices", [])
         if not choices:
-            return ChatResponse(text="", tool_calls=[], usage=TokenUsage(0, 0), finish_reason="stop")
+            return ChatResponse(
+                text="", tool_calls=[], usage=TokenUsage(0, 0), finish_reason="stop"
+            )
 
         msg = choices[0].get("message", {})
         text = msg.get("content", "") or ""
@@ -69,11 +70,13 @@ class OpenAIProvider:
                 args = json.loads(func.get("arguments", "{}"))
             except json.JSONDecodeError:
                 args = {}
-            tool_calls.append(ToolCall(
-                id=tc.get("id", ""),
-                name=func.get("name", ""),
-                arguments=args,
-            ))
+            tool_calls.append(
+                ToolCall(
+                    id=tc.get("id", ""),
+                    name=func.get("name", ""),
+                    arguments=args,
+                )
+            )
 
         usage = data.get("usage", {})
         return ChatResponse(
@@ -133,12 +136,15 @@ class OpenAIProvider:
             payload["tools"] = [_to_openai_tool(t) for t in tools]
             payload["tool_choice"] = "auto"
 
-        async with httpx.AsyncClient(timeout=self._timeout) as client, client.stream(
-            "POST",
-            self._base_url,
-            headers=self._headers(),
-            json=payload,
-        ) as resp:
+        async with (
+            httpx.AsyncClient(timeout=self._timeout) as client,
+            client.stream(
+                "POST",
+                self._base_url,
+                headers=self._headers(),
+                json=payload,
+            ) as resp,
+        ):
             resp.raise_for_status()
 
             # 增量聚合 tool_calls

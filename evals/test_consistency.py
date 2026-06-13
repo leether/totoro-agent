@@ -3,6 +3,7 @@ Eval 3: 一致性 — 同一条消息分别用两种 SDK 调用，
 对比输出内容是否语义相近（粗略检查：关键词覆盖 & 长度比），
 同时检查 usage 口径是否一致。
 """
+
 from conftest import run_benchmark
 
 PROMPTS = [
@@ -61,7 +62,8 @@ def test_streaming_equivalence():
     import anthropic as anth
 
     client_anth = anth.Anthropic(
-        api_key="dummy", base_url="https://api.longcat.chat/anthropic",
+        api_key="dummy",
+        base_url="https://api.longcat.chat/anthropic",
         default_headers={"Content-Type": "application/json", "Authorization": "Bearer dummy"},
     )
     # 只验证 SDK 流式接口是否可正常构建（不真正调用）

@@ -2,14 +2,15 @@
 Eval 2: 延迟对比 — 多轮对话 & 长输出的延迟表现
 各跑 3 次取平均，不做严格断言，输出对比表。
 """
+
 import pytest
 
 from conftest import run_benchmark
 
 MULTI_TURN = [
-    {"role": "user",      "content": "你好"},
+    {"role": "user", "content": "你好"},
     {"role": "assistant", "content": "你好！有什么可以帮你的？"},
-    {"role": "user",      "content": "帮我写一首五言绝句，关于春天"},
+    {"role": "user", "content": "帮我写一首五言绝句，关于春天"},
 ]
 
 LONG_OUTPUT = [

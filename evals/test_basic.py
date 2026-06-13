@@ -1,6 +1,7 @@
 """
 Eval 1: 基础能力 — 两种 SDK 都能正常返回文本
 """
+
 import pytest
 
 from conftest import run_benchmark

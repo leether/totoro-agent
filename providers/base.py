@@ -1,7 +1,6 @@
 """ChatProvider 协议 — 所有 LLM 后端必须实现此接口。"""
-from __future__ import annotations
 
-from typing import Any
+from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Protocol
@@ -13,6 +12,7 @@ if TYPE_CHECKING:
 @dataclass
 class TokenUsage:
     """Token 用量统计。"""
+
     input_tokens: int = 0
     output_tokens: int = 0
     total_tokens: int = 0
@@ -21,6 +21,7 @@ class TokenUsage:
 @dataclass
 class ToolCallDefinition:
     """工具调用定义（发送给 LLM 的 tool/function 描述）。"""
+
     name: str
     description: str
     parameters_schema: dict[str, Any]  # JSON Schema
@@ -46,6 +47,7 @@ class ToolCallDefinition:
 @dataclass
 class ToolCall:
     """模型返回的一次工具调用。"""
+
     id: str
     name: str
     arguments: dict[str, Any]
@@ -54,6 +56,7 @@ class ToolCall:
 @dataclass
 class ChatResponse:
     """非流式聊天响应。"""
+
     text: str
     tool_calls: list[ToolCall] = field(default_factory=list)
     usage: TokenUsage = field(default_factory=TokenUsage)
@@ -63,6 +66,7 @@ class ChatResponse:
 @dataclass
 class StreamEvent:
     """流式响应事件。"""
+
     type: str  # "text_delta" | "tool_call_start" | "tool_call_end" | "done"
     content: str = ""
     tool_name: str = ""

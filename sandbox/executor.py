@@ -3,6 +3,7 @@
 当前默认使用 SubprocessExecutor (tools/bash_tool.py)。
 未来可替换为 DockerExecutor 实现容器级隔离。
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -13,9 +14,10 @@ from typing import Protocol
 @dataclass
 class SandboxConfig:
     """沙箱配置。"""
-    max_execution_time: int = 30       # 单次命令超时（秒）
-    max_output_size: int = 10_000     # 输出截断长度
-    allowed_paths: list[str] | None = None    # 可写路径白名单（None = 不限制）
+
+    max_execution_time: int = 30  # 单次命令超时（秒）
+    max_output_size: int = 10_000  # 输出截断长度
+    allowed_paths: list[str] | None = None  # 可写路径白名单（None = 不限制）
     blocked_commands: list[str] | None = None  # 命令黑名单
 
     def __post_init__(self) -> None:

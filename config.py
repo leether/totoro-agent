@@ -1,4 +1,5 @@
 """全局配置 — .env 加载 + dataclass 绑定。"""
+
 from __future__ import annotations
 
 import os
@@ -17,6 +18,7 @@ if _env_file.exists():
 @dataclass
 class TotoroConfig:
     """Totoro 后端配置。"""
+
     api_key: str = field(default_factory=lambda: os.environ.get("TOTORO_API_KEY", ""))
     base_url: str = "https://api.longcat.chat/anthropic"
     model: str = "LongCat-2.0-Preview"
@@ -25,6 +27,7 @@ class TotoroConfig:
 @dataclass
 class OpenAIConfig:
     """OpenAI 后端配置。"""
+
     api_key: str = field(default_factory=lambda: os.environ.get("OPENAI_API_KEY", ""))
     base_url: str = "https://api.openai.com/v1"
     model: str = "gpt-4o"
@@ -33,6 +36,7 @@ class OpenAIConfig:
 @dataclass
 class AnthropicConfig:
     """Anthropic 后端配置。"""
+
     api_key: str = field(default_factory=lambda: os.environ.get("ANTHROPIC_API_KEY", ""))
     model: str = "claude-sonnet-4-20250514"
 
@@ -40,6 +44,7 @@ class AnthropicConfig:
 @dataclass
 class AgentSettings:
     """Agent 完整配置。"""
+
     provider_name: str = field(default_factory=lambda: os.environ.get("AGENT_PROVIDER", "totoro"))
     max_iterations: int = 50
     max_tokens: int = 4096

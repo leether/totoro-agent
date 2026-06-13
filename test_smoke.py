@@ -1,4 +1,5 @@
 """冒烟测试：验证 longcat_agent 能正确初始化（不实际调用 API）。"""
+
 import inspect
 
 from longcat_agent import BASE_URL, MODEL, chat, multi_turn, stream_chat

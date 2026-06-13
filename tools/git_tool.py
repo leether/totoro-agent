@@ -1,9 +1,9 @@
 """Git 工具 — git status / diff / log。"""
+
 from __future__ import annotations
 
-from typing import Any
-
 import asyncio
+from typing import Any
 
 from tools.base import BaseTool, ToolResult
 

@@ -1,10 +1,10 @@
 """网络工具 — WebSearch / WebFetch。"""
-from __future__ import annotations
 
-from typing import Any
+from __future__ import annotations
 
 import urllib.parse
 import urllib.request
+from typing import Any
 
 from tools.base import BaseTool, ToolResult
 
@@ -40,6 +40,7 @@ class WebSearchTool(BaseTool):
             req = urllib.request.Request(url, headers={"User-Agent": "totoro-agent/1.0"})  # noqa: S310
             with urllib.request.urlopen(req, timeout=15) as resp:  # noqa: S310
                 import json
+
                 data = json.loads(resp.read().decode("utf-8"))
 
             parts = []
@@ -91,6 +92,7 @@ class WebFetchTool(BaseTool):
 
             # 简单去除 HTML 标签
             import re
+
             text = re.sub(r"<[^>]+>", "", content)
             text = re.sub(r"\s+", " ", text).strip()
 

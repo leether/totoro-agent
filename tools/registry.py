@@ -1,10 +1,9 @@
 """ToolRegistry — 工具注册中心，管理 JSON Schema 生成和工具实例查找。"""
+
 from __future__ import annotations
 
-from typing import Any
-
 from collections import OrderedDict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from tools.base import BaseTool

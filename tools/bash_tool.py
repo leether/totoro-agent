@@ -1,20 +1,30 @@
 """Bash 工具 — 在沙箱内执行 Shell 命令。"""
+
 from __future__ import annotations
 
-from typing import Any
-
 import asyncio
+from typing import Any
 
 from tools.base import BaseTool, ToolResult
 
 # 危险命令黑名单
 _BLOCKED_PATTERNS = [
-    "rm -rf", "rm -r /", "rm -rf /",
-    "sudo ", "sudo\t",
-    "curl | sh", "curl | bash", "wget | sh",
-    "mkfs", "dd if=", "dd of=",
-    "chmod 777", "chown root",
-    "shutdown -h", "shutdown -r", "reboot",
+    "rm -rf",
+    "rm -r /",
+    "rm -rf /",
+    "sudo ",
+    "sudo\t",
+    "curl | sh",
+    "curl | bash",
+    "wget | sh",
+    "mkfs",
+    "dd if=",
+    "dd of=",
+    "chmod 777",
+    "chown root",
+    "shutdown -h",
+    "shutdown -r",
+    "reboot",
     "killall -9",
 ]
 
@@ -88,9 +98,9 @@ class BashTool(BaseTool):
 
         # 截断输出
         if len(stdout) > self._max_output:
-            stdout = stdout[:self._max_output] + f"\n... (截断，原始长度 {len(stdout)})"
+            stdout = stdout[: self._max_output] + f"\n... (截断，原始长度 {len(stdout)})"
         if len(stderr) > self._max_output:
-            stderr = stderr[:self._max_output] + f"\n... (截断，原始长度 {len(stderr)})"
+            stderr = stderr[: self._max_output] + f"\n... (截断，原始长度 {len(stderr)})"
 
         returncode = proc.returncode or 0
         output = stdout
