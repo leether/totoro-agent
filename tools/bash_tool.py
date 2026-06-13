@@ -89,9 +89,10 @@ class BashTool(BaseTool):
         stderr = stderr_b.decode("utf-8", errors="replace") if stderr_b else ""
 
         # 截断输出
-        for attr in (stdout, stderr):
-            if len(attr) > self._max_output:
-                attr = attr[:self._max_output] + f"\n... (截断，原始长度 {len(attr)})"
+        if len(stdout) > self._max_output:
+            stdout = stdout[:self._max_output] + f"\n... (截断，原始长度 {len(stdout)})"
+        if len(stderr) > self._max_output:
+            stderr = stderr[:self._max_output] + f"\n... (截断，原始长度 {len(stderr)})"
 
         returncode = proc.returncode or 0
         output = stdout

@@ -10,7 +10,16 @@ dependencies = [
 [project.optional-dependencies]
 api = ["fastapi>=0.110", "uvicorn>=0.29", "sse-starlette>=2.0"]
 repl = ["prompt_toolkit>=3.0", "rich>=13.0"]
-all = ["fastapi>=0.110", "uvicorn>=0.29", "sse-starlette>=2.0", "prompt_toolkit>=3.0", "rich>=13.0"]
+test = ["pytest>=8.0", "pytest-asyncio>=2.0"]
+all = ["fastapi>=0.110", "uvicorn>=0.29", "sse-starlette>=2.0", "prompt_toolkit>=3.0", "rich>=13.0", "pytest>=8.0", "pytest-asyncio>=2.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "strict"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks integration tests requiring network",
+]
 
 [project.scripts]
 totoro = "longcat_agent:main"
