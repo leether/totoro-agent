@@ -195,35 +195,28 @@ class AgentEngine:
 
             # 有 tool_calls → 执行工具
             if llm_response.tool_calls:
-                # 将 assistant 消息加入历史
-                assistant_msg = {
-                    "role": "assistant",
-                    "content": llm_response.text or "",
-                }
-                session.messages.append(assistant_msg)
+                # 将 assistant 消息加入历史（一条消息包含所有 tool_calls）
+                tool_calls_serialized = [
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {
+                            "name": tc.name,
+                            "arguments": json.dumps(tc.arguments, ensure_ascii=False),
+                        },
+                    }
+                    for tc in llm_response.tool_calls
+                ]
+                session.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": llm_response.text or "",
+                        "tool_calls": tool_calls_serialized,
+                    }
+                )
 
+                # 执行所有工具，收集结果
                 for tool_call in llm_response.tool_calls:
-                    # 将 tool_call 加入历史
-                    session.messages.append(
-                        {
-                            "role": "assistant",
-                            "content": "",
-                            "tool_calls": [
-                                {
-                                    "id": tool_call.id,
-                                    "type": "function",
-                                    "function": {
-                                        "name": tool_call.name,
-                                        "arguments": json.dumps(
-                                            tool_call.arguments, ensure_ascii=False
-                                        ),
-                                    },
-                                }
-                            ],
-                        }
-                    )
-
-                    # 执行工具
                     result = await self._execute_tool(tool_call)
 
                     total_tool_calls.append(
@@ -244,20 +237,8 @@ class AgentEngine:
                         }
                     )
 
-                    # 保存 tool_call 到 assistant message
-                    assistant_msg["tool_calls"] = [
-                        {  # type: ignore[assignment]
-                            "id": tool_call.id,
-                            "type": "function",
-                            "function": {
-                                "name": tool_call.name,
-                                "arguments": json.dumps(tool_call.arguments, ensure_ascii=False),
-                            },
-                        }
-                    ]
-
-                    # 压缩检查
-                    session.messages = self._context.compress_history(session.messages)
+                # 压缩检查
+                session.messages = self._context.compress_history(session.messages)
 
             # 只有 text 没有 tool_calls → 也完成
             if not llm_response.tool_calls and llm_response.text:
@@ -356,7 +337,9 @@ class AgentEngine:
                 # 无 tool_calls → 完成
                 break
 
-            # 执行所有 tool calls
+            # 执行所有 tool calls — 先收集，再合并到一条 assistant 消息
+            tool_calls_serialized = []
+            tool_results = []
             for tool_call in pending_tool_calls:
                 result = await self._execute_tool(tool_call)
                 yield {
@@ -366,31 +349,36 @@ class AgentEngine:
                     "output": result.output[:500],
                 }
 
-                session.messages.append(
+                tool_calls_serialized.append(
                     {
-                        "role": "assistant",
-                        "content": "",
-                        "tool_calls": [
-                            {
-                                "id": tool_call.id,
-                                "type": "function",
-                                "function": {
-                                    "name": tool_call.name,
-                                    "arguments": json.dumps(
-                                        tool_call.arguments, ensure_ascii=False
-                                    ),
-                                },
-                            }
-                        ],
+                        "id": tool_call.id,
+                        "type": "function",
+                        "function": {
+                            "name": tool_call.name,
+                            "arguments": json.dumps(
+                                tool_call.arguments, ensure_ascii=False
+                            ),
+                        },
                     }
                 )
-                session.messages.append(
+                tool_results.append(
                     {
                         "role": "tool",
                         "tool_call_id": tool_call.id,
                         "content": result.to_message(),
                     }
                 )
+
+            # 一条 assistant 消息包含所有 tool_calls
+            session.messages.append(
+                {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": tool_calls_serialized,
+                }
+            )
+            # 所有 tool results 跟在后面
+            session.messages.extend(tool_results)
 
             session.messages = self._context.compress_history(session.messages)
 

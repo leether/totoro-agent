@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Protocol, TypedDict
@@ -126,6 +127,85 @@ class ChatPayload(TypedDict):
 _VALID_ROLES = frozenset({"user", "assistant", "system"})
 
 
+def convert_openai_to_anthropic_messages(
+    messages: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """将 OpenAI 格式的消息列表转换为 Anthropic /v1/messages 格式。
+
+    转换规则:
+    - {"role":"system","content":...} → 跳过（由调用方提取为 system 字段）
+    - {"role":"user","content":...} → 原样保留
+    - {"role":"assistant","content":"text"} → 原样保留
+    - {"role":"assistant","content":"","tool_calls":[...]} →
+        {"role":"assistant","content":[{"type":"tool_use","id":...,"name":...,"input":...}]}
+    - {"role":"assistant","content":"text","tool_calls":[...]} →
+        {"role":"assistant","content":[{"type":"text","text":"text"},{"type":"tool_use",...}]}
+    - {"role":"tool","tool_call_id":...,"content":...} →
+        {"role":"user","content":[{"type":"tool_result","tool_use_id":...,"content":...}]}
+    - 相邻的多个 tool_result 自动合并到同一条 user 消息的 content 列表
+    """
+    converted: list[dict[str, Any]] = []
+
+    for msg in messages:
+        role = msg.get("role", "")
+        content = msg.get("content", "")
+        tool_calls = msg.get("tool_calls")
+
+        if role == "system":
+            continue  # system 由调用方处理
+
+        if role == "tool":
+            # tool result → Anthropic 的 user + tool_result block
+            tool_result_block = {
+                "type": "tool_result",
+                "tool_use_id": msg.get("tool_call_id", ""),
+                "content": content,
+            }
+            # 尝试与上一条合并（如果上一条也是 tool_result 转换来的 user 消息）
+            if converted and converted[-1].get("role") == "user":
+                last_content = converted[-1].get("content")
+                if (
+                    isinstance(last_content, list)
+                    and len(last_content) > 0
+                    and isinstance(last_content[0], dict)
+                    and last_content[0].get("type") == "tool_result"
+                ):
+                    last_content.append(tool_result_block)
+                    continue
+            converted.append({"role": "user", "content": [tool_result_block]})
+
+        elif role == "assistant" and tool_calls:
+            # assistant + tool_calls → Anthropic content blocks
+            blocks: list[dict[str, Any]] = []
+            if content:
+                blocks.append({"type": "text", "text": content})
+            for tc in tool_calls:
+                func = tc.get("function", {})
+                try:
+                    args = (
+                        json.loads(func.get("arguments", "{}"))
+                        if isinstance(func.get("arguments"), str)
+                        else func.get("arguments", {})
+                    )
+                except json.JSONDecodeError:
+                    args = {}
+                blocks.append(
+                    {
+                        "type": "tool_use",
+                        "id": tc.get("id", ""),
+                        "name": func.get("name", ""),
+                        "input": args,
+                    }
+                )
+            converted.append({"role": "assistant", "content": blocks})
+
+        else:
+            # 普通的 user / assistant 纯文本消息
+            converted.append({"role": role, "content": content})
+
+    return converted
+
+
 def validate_payload(payload: dict[str, Any]) -> list[str]:
     """运行时校验请求体，返回错误列表（空列表 = 通过）。
 
@@ -152,7 +232,15 @@ def validate_payload(payload: dict[str, Any]) -> list[str]:
             role = msg.get("role")
             if role not in _VALID_ROLES:
                 errors.append(f"messages[{i}].role={role!r} 不在 {sorted(_VALID_ROLES)} 中")
-            if not msg.get("content"):
+            # content 可以是 str 或 list（Anthropic content blocks）
+            content = msg.get("content")
+            if isinstance(content, str):
+                if not content:
+                    errors.append(f"messages[{i}].content 不能为空")
+            elif isinstance(content, list):
+                if len(content) == 0:
+                    errors.append(f"messages[{i}].content 不能为空列表")
+            elif content is None:
                 errors.append(f"messages[{i}].content 不能为空")
 
     temperature = payload.get("temperature")

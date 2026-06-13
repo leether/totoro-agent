@@ -17,6 +17,7 @@ from providers.base import (
     TokenUsage,
     ToolCall,
     ToolCallDefinition,
+    convert_openai_to_anthropic_messages,
 )
 
 if TYPE_CHECKING:
@@ -93,10 +94,13 @@ class AnthropicProvider:
         temperature: float = 0.1,
     ) -> ChatResponse:
         system_content = None
-        chat_messages = messages[:]
+        raw_messages = messages[:]
         if messages and messages[0].get("role") == "system":
             system_content = messages[0]["content"]
-            chat_messages = messages[1:]
+            raw_messages = messages[1:]
+
+        # 将 OpenAI 格式的 tool messages 转换为 Anthropic 格式
+        chat_messages = convert_openai_to_anthropic_messages(raw_messages)
 
         payload: dict[str, Any] = {
             "model": self._model,
@@ -128,10 +132,13 @@ class AnthropicProvider:
         temperature: float = 0.1,
     ) -> AsyncIterator[StreamEvent]:
         system_content = None
-        chat_messages = messages[:]
+        raw_messages = messages[:]
         if messages and messages[0].get("role") == "system":
             system_content = messages[0]["content"]
-            chat_messages = messages[1:]
+            raw_messages = messages[1:]
+
+        # 将 OpenAI 格式的 tool messages 转换为 Anthropic 格式
+        chat_messages = convert_openai_to_anthropic_messages(raw_messages)
 
         payload: dict[str, Any] = {
             "model": self._model,

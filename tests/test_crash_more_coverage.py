@@ -288,126 +288,256 @@ class TestProjectToolFull:
 
 
 class TestWebToolsMocked:
-    """Web 工具测试，使用 mock 避免真实网络请求。"""
+    """Web 工具测试，使用 mock httpx 客户端避免真实网络请求。"""
 
     @pytest.mark.asyncio
     async def test_web_search_network_error(self):
         """网络错误应返回失败结果，不崩溃。"""
-        from tools.web_tools import WebSearchTool
+        from tools import web_tools
 
-        tool = WebSearchTool()
-        with patch("urllib.request.urlopen", side_effect=Exception("Network down")):
+        tool = web_tools.WebSearchTool()
+        mock_client = AsyncMock()
+        mock_client.get = AsyncMock(side_effect=Exception("Network down"))
+        mock_client.is_closed = False
+        with patch.object(web_tools, "_client", mock_client):
             result = await tool.execute(query="test query")
-        assert result.success is False
-        assert "搜索失败" in result.error
+        assert result.success is True  # 双后端都失败 → 无搜索结果
+        assert "无搜索结果" in result.output
+
+    @pytest.mark.asyncio
+    async def test_web_search_bing_results(self):
+        """Bing 返回搜索结果应正确解析。"""
+        from tools import web_tools
+
+        tool = web_tools.WebSearchTool()
+        bing_html = """
+        <li class="b_algo">
+            <h2><a href="https://example.com/article">Python Async Guide</a></h2>
+            <div class="b_caption"><p>A comprehensive guide to async programming.</p></div>
+        </li>
+        <li class="b_algo">
+            <h2><a href="https://realpython.com/async">Real Python Async Tutorial</a></h2>
+            <div class="b_caption"><p>Learn asyncio from scratch.</p></div>
+        </li>
+        """
+
+        mock_bing = MagicMock()
+        mock_bing.status_code = 200
+        mock_bing.text = bing_html
+
+        mock_wiki = MagicMock()
+        mock_wiki.status_code = 200
+        mock_wiki.json.return_value = {"query": {"search": []}}
+
+        mock_client = AsyncMock()
+        mock_client.is_closed = False
+        mock_client.get = AsyncMock(side_effect=[mock_bing, mock_wiki])
+        with patch.object(web_tools, "_client", mock_client):
+            result = await tool.execute(query="python async")
+
+        assert result.success is True
+        assert "Python Async Guide" in result.output
+        assert "example.com/article" in result.output
+        assert "comprehensive guide" in result.output
+
+    @pytest.mark.asyncio
+    async def test_web_search_wikipedia_only(self):
+        """Bing 返回空但 Wikipedia 有结果。"""
+        from tools import web_tools
+
+        tool = web_tools.WebSearchTool()
+        mock_bing = MagicMock()
+        mock_bing.status_code = 200
+        mock_bing.text = "<html><body>No results here</body></html>"
+
+        mock_wiki = MagicMock()
+        mock_wiki.status_code = 200
+        mock_wiki.json.return_value = {
+            "query": {
+                "search": [
+                    {"title": "Asyncio", "snippet": "asyncio is a Python module"},
+                ]
+            }
+        }
+
+        mock_client = AsyncMock()
+        mock_client.is_closed = False
+        mock_client.get = AsyncMock(side_effect=[mock_bing, mock_wiki])
+        with patch.object(web_tools, "_client", mock_client):
+            result = await tool.execute(query="asyncio")
+
+        assert result.success is True
+        assert "Asyncio" in result.output
+        assert "Wikipedia" in result.output
+
+    @pytest.mark.asyncio
+    async def test_web_search_empty_results(self):
+        """两个后端都返回空结果。"""
+        from tools import web_tools
+
+        tool = web_tools.WebSearchTool()
+        mock_bing = MagicMock()
+        mock_bing.status_code = 200
+        mock_bing.text = "<html><body></body></html>"
+
+        mock_wiki = MagicMock()
+        mock_wiki.status_code = 200
+        mock_wiki.json.return_value = {"query": {"search": []}}
+
+        mock_client = AsyncMock()
+        mock_client.is_closed = False
+        mock_client.get = AsyncMock(side_effect=[mock_bing, mock_wiki])
+        with patch.object(web_tools, "_client", mock_client):
+            result = await tool.execute(query="obscure query")
+
+        assert result.success is True
+        assert "无搜索结果" in result.output
+
+    @pytest.mark.asyncio
+    async def test_web_search_bing_500_error(self):
+        """Bing 返回 500 → 应优雅降级到 Wikipedia。"""
+        from tools import web_tools
+
+        tool = web_tools.WebSearchTool()
+        mock_bing = MagicMock()
+        mock_bing.status_code = 500
+        mock_bing.text = "Internal Server Error"
+
+        mock_wiki = MagicMock()
+        mock_wiki.status_code = 200
+        mock_wiki.json.return_value = {
+            "query": {"search": [{"title": "Test", "snippet": "test snippet"}]}
+        }
+
+        mock_client = AsyncMock()
+        mock_client.is_closed = False
+        mock_client.get = AsyncMock(side_effect=[mock_bing, mock_wiki])
+        with patch.object(web_tools, "_client", mock_client):
+            result = await tool.execute(query="test")
+
+        assert result.success is True
+        assert "Test" in result.output
 
     @pytest.mark.asyncio
     async def test_web_fetch_network_error(self):
         """获取 URL 失败应返回错误。"""
-        from tools.web_tools import WebFetchTool
+        from tools import web_tools
 
-        tool = WebFetchTool()
-        with patch("urllib.request.urlopen", side_effect=Exception("Connection refused")):
+        tool = web_tools.WebFetchTool()
+        mock_client = AsyncMock()
+        mock_client.is_closed = False
+        mock_client.get = AsyncMock(side_effect=Exception("Connection refused"))
+        with patch.object(web_tools, "_client", mock_client):
             result = await tool.execute(url="http://nonexistent.invalid")
         assert result.success is False
         assert "获取失败" in result.error
 
     @pytest.mark.asyncio
-    async def test_web_search_malformed_response(self):
-        """畸形响应不应崩溃。"""
-        from tools.web_tools import WebSearchTool
-
-        tool = WebSearchTool()
-        mock_resp = MagicMock()
-        mock_resp.read.return_value = b"not json at all"
-        mock_resp.__enter__ = MagicMock(return_value=mock_resp)
-        mock_resp.__exit__ = MagicMock(return_value=False)
-
-        with patch("urllib.request.urlopen", return_value=mock_resp):
-            result = await tool.execute(query="test")
-        assert result.success is False
-
-    @pytest.mark.asyncio
-    async def test_web_search_empty_results(self):
-        """搜索返回空结果。"""
-        from tools.web_tools import WebSearchTool
-
-        tool = WebSearchTool()
-        mock_resp = MagicMock()
-        mock_resp.read.return_value = json.dumps(
-            {
-                "AbstractText": "",
-                "AbstractURL": "",
-                "RelatedTopics": [],
-            }
-        ).encode()
-        mock_resp.__enter__ = MagicMock(return_value=mock_resp)
-        mock_resp.__exit__ = MagicMock(return_value=False)
-
-        with patch("urllib.request.urlopen", return_value=mock_resp):
-            result = await tool.execute(query="obscure query")
-        assert result.success is True
-        assert "无搜索结果" in result.output
-
-    @pytest.mark.asyncio
-    async def test_web_search_with_results(self):
-        """搜索返回有效结果。"""
-        from tools.web_tools import WebSearchTool
-
-        tool = WebSearchTool()
-        mock_resp = MagicMock()
-        mock_resp.read.return_value = json.dumps(
-            {
-                "AbstractText": "Python is a programming language.",
-                "AbstractURL": "https://python.org",
-                "RelatedTopics": [
-                    {"Text": "Python tutorial"},
-                    {"Text": "Python docs"},
-                ],
-            }
-        ).encode()
-        mock_resp.__enter__ = MagicMock(return_value=mock_resp)
-        mock_resp.__exit__ = MagicMock(return_value=False)
-
-        with patch("urllib.request.urlopen", return_value=mock_resp):
-            result = await tool.execute(query="python")
-        assert result.success is True
-        assert "programming language" in result.output
-        assert "Python tutorial" in result.output
-
-    @pytest.mark.asyncio
-    async def test_web_fetch_html_content(self):
-        """获取 HTML 页面应去除标签。"""
+    async def test_web_fetch_invalid_url(self):
+        """无效 URL 应返回错误。"""
         from tools.web_tools import WebFetchTool
 
         tool = WebFetchTool()
-        mock_resp = MagicMock()
-        mock_resp.read.return_value = b"<html><body><p>Hello World</p></body></html>"
-        mock_resp.__enter__ = MagicMock(return_value=mock_resp)
-        mock_resp.__exit__ = MagicMock(return_value=False)
+        result = await tool.execute(url="not-a-url")
+        assert result.success is False
+        assert "无效的 URL" in result.error
 
-        with patch("urllib.request.urlopen", return_value=mock_resp):
+    @pytest.mark.asyncio
+    async def test_web_fetch_html_content(self):
+        """获取 HTML 页面应去除标签，保留正文。"""
+        from tools import web_tools
+
+        tool = web_tools.WebFetchTool()
+        html = (
+            "<html><head><style>body{color:red}</style></head>"
+            "<body><script>alert(1)</script>"
+            "<nav>Menu</nav><p>Hello World</p>"
+            "<footer>Copyright</footer></body></html>"
+        )
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.text = html
+        mock_resp.headers = {"content-type": "text/html"}
+        mock_resp.raise_for_status = MagicMock()
+
+        mock_client = AsyncMock()
+        mock_client.is_closed = False
+        mock_client.get = AsyncMock(return_value=mock_resp)
+        with patch.object(web_tools, "_client", mock_client):
             result = await tool.execute(url="http://example.com")
+
         assert result.success is True
         assert "Hello World" in result.output
         assert "<p>" not in result.output
+        assert "alert" not in result.output
+        assert "Copyright" not in result.output  # footer 被去除
+        assert "color:red" not in result.output  # style 被去除
+
+    @pytest.mark.asyncio
+    async def test_web_fetch_plain_text(self):
+        """纯文本内容应直接返回。"""
+        from tools import web_tools
+
+        tool = web_tools.WebFetchTool()
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.text = "Hello, this is plain text."
+        mock_resp.headers = {"content-type": "text/plain"}
+        mock_resp.raise_for_status = MagicMock()
+
+        mock_client = AsyncMock()
+        mock_client.is_closed = False
+        mock_client.get = AsyncMock(return_value=mock_resp)
+        with patch.object(web_tools, "_client", mock_client):
+            result = await tool.execute(url="https://raw.githubusercontent.com/test")
+
+        assert result.success is True
+        assert "plain text" in result.output
+
+    @pytest.mark.asyncio
+    async def test_web_fetch_json_content(self):
+        """JSON 内容应直接返回。"""
+        from tools import web_tools
+
+        tool = web_tools.WebFetchTool()
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.text = '{"key": "value", "items": [1, 2, 3]}'
+        mock_resp.headers = {"content-type": "application/json"}
+        mock_resp.raise_for_status = MagicMock()
+
+        mock_client = AsyncMock()
+        mock_client.is_closed = False
+        mock_client.get = AsyncMock(return_value=mock_resp)
+        with patch.object(web_tools, "_client", mock_client):
+            result = await tool.execute(url="https://api.example.com/data")
+
+        assert result.success is True
+        assert "value" in result.output
+        assert "items" in result.output
 
     @pytest.mark.asyncio
     async def test_web_fetch_large_content_truncated(self):
         """大页面应被截断。"""
-        from tools.web_tools import WebFetchTool
+        from tools import web_tools
 
-        tool = WebFetchTool()
-        large_html = f"<p>{'x' * 20000}</p>"
+        tool = web_tools.WebFetchTool()
+        large_html = f"<html><body><p>{'x' * 20000}</p></body></html>"
         mock_resp = MagicMock()
-        mock_resp.read.return_value = large_html.encode()
-        mock_resp.__enter__ = MagicMock(return_value=mock_resp)
-        mock_resp.__exit__ = MagicMock(return_value=False)
+        mock_resp.status_code = 200
+        mock_resp.text = large_html
+        mock_resp.headers = {"content-type": "text/html"}
+        mock_resp.raise_for_status = MagicMock()
 
-        with patch("urllib.request.urlopen", return_value=mock_resp):
-            result = await tool.execute(url="http://example.com/large")
+        mock_client = AsyncMock()
+        mock_client.is_closed = False
+        mock_client.get = AsyncMock(return_value=mock_resp)
+        with patch.object(web_tools, "_client", mock_client):
+            result = await tool.execute(url="http://example.com/large", max_length=500)
+
         assert result.success is True
-        assert len(result.output) < 20000
+        assert len(result.output) <= 600  # 500 + 截断提示
+        assert "截断" in result.output
 
     def test_web_search_tool_schema(self):
         from tools.web_tools import WebSearchTool
@@ -415,6 +545,7 @@ class TestWebToolsMocked:
         tool = WebSearchTool()
         assert tool.name == "web_search"
         assert "query" in tool.parameters_schema["properties"]
+        assert "max_results" in tool.parameters_schema["properties"]
 
     def test_web_fetch_tool_schema(self):
         from tools.web_tools import WebFetchTool
@@ -422,6 +553,73 @@ class TestWebToolsMocked:
         tool = WebFetchTool()
         assert tool.name == "web_fetch"
         assert "url" in tool.parameters_schema["properties"]
+        assert "max_length" in tool.parameters_schema["properties"]
+
+    def test_extract_text_strips_noise_tags(self):
+        """HTML 提取函数应去除 script/style/nav/footer。"""
+        from tools.web_tools import extract_text_from_html
+
+        html = """
+        <html><body>
+        <script>var x = 1;</script>
+        <style>.cls { color: red; }</style>
+        <nav><ul><li>Home</li><li>About</li></ul></nav>
+        <main>
+            <h1>Title</h1>
+            <p>Important content here.</p>
+        </main>
+        <footer>(c) 2024</footer>
+        </body></html>
+        """
+        text = extract_text_from_html(html)
+        assert "Title" in text
+        assert "Important content" in text
+        assert "var x" not in text
+        assert "color: red" not in text
+        assert "Home" not in text
+        assert "(c) 2024" not in text
+
+    def test_parse_bing_real_html(self):
+        """解析真实 Bing HTML 结构（含 CSS link 注入）。"""
+        from tools.web_tools import _parse_bing
+
+        html = """
+        <li class="b_algo">
+            <link rel="stylesheet" href="https://r.bing.com/rs/abc.css"/>
+            <div class="b_tpcn"><a class="tilk" href="https://example.com">domain</a></div>
+            <h2><a href="https://example.com/guide">Python Guide</a></h2>
+            <div class="b_caption"><p class="b_lineclamp2">A great guide.</p></div>
+        </li>
+        <li class="b_algo">
+            <h2><a href="https://test.com/page">Another Result</a></h2>
+            <div class="b_caption"><p>Some snippet text.</p></div>
+        </li>
+        """
+        results = _parse_bing(html, max_results=5)
+        assert len(results) == 2
+        assert results[0]["title"] == "Python Guide"
+        assert results[0]["url"] == "https://example.com/guide"
+        assert "great guide" in results[0]["snippet"]
+        assert results[1]["title"] == "Another Result"
+        assert results[1]["url"] == "https://test.com/page"
+
+    def test_parse_bing_skips_internal_links(self):
+        """Bing 内部链接应被跳过。"""
+        from tools.web_tools import _parse_bing
+
+        html = """
+        <li class="b_algo">
+            <h2><a href="https://www.bing.com/internal">Internal</a></h2>
+            <div class="b_caption"><p>skip me</p></div>
+        </li>
+        <li class="b_algo">
+            <h2><a href="https://real.com/page">Real Result</a></h2>
+            <div class="b_caption"><p>keep me</p></div>
+        </li>
+        """
+        results = _parse_bing(html, max_results=5)
+        assert len(results) == 1
+        assert results[0]["url"] == "https://real.com/page"
 
 
 # ============================================================================
