@@ -139,7 +139,7 @@ class TestAskUser:
         # 应该：检查是否非阻塞 -> 设为阻塞 -> 读取 -> 设回非阻塞
         blocking_sets = [c for c in calls if c[0] == "set_blocking"]
         assert len(blocking_sets) == 2
-        assert blocking_sets[0] == ("set_blocking", 0, True)   # 设为阻塞
+        assert blocking_sets[0] == ("set_blocking", 0, True)  # 设为阻塞
         assert blocking_sets[1] == ("set_blocking", 0, False)  # 恢复非阻塞
 
     def test_blocking_mode_already_blocking(self, monkeypatch):
@@ -351,6 +351,7 @@ class TestDisplayFunctions:
 # run_repl 集成测试
 # ============================================================================
 
+
 def _make_mock_settings(tmp_path):
     """创建用于 REPL 测试的 mock settings。"""
     settings = MagicMock()
@@ -464,6 +465,7 @@ class TestRunReplSlashCommands:
     @pytest.mark.asyncio
     async def test_eof_exits_gracefully(self, tmp_path):
         """EOF 应优雅退出。"""
+
         def raise_eof(_):
             raise EOFError
 
@@ -477,6 +479,7 @@ class TestRunReplSlashCommands:
     @pytest.mark.asyncio
     async def test_keyboard_interrupt_exits_gracefully(self, tmp_path):
         """Ctrl+C 应优雅退出。"""
+
         def raise_ki(_):
             raise KeyboardInterrupt
 
@@ -490,6 +493,7 @@ class TestRunReplSlashCommands:
     @pytest.mark.asyncio
     async def test_os_error_exits_gracefully(self, tmp_path):
         """OSError（stdin 管道问题）应优雅退出。"""
+
         def raise_os_error(_):
             raise OSError("Bad file descriptor")
 
@@ -509,7 +513,13 @@ class TestRunReplSlashCommands:
         async def mock_run_stream(*args, **kwargs):
             yield {"type": "text_delta", "content": "Hello!"}
             yield {"type": "tool_call_start", "tool": "bash"}
-            yield {"type": "tool_result", "success": True, "output": "ok", "output_preview": "ok", "tool": "bash"}
+            yield {
+                "type": "tool_result",
+                "success": True,
+                "output": "ok",
+                "output_preview": "ok",
+                "tool": "bash",
+            }
             yield {"type": "done"}
             yield {"type": "final", "iterations": 1}
 
