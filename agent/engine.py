@@ -4,16 +4,20 @@
 """
 from __future__ import annotations
 
+from typing import Any
+
 import json
 import uuid
 from dataclasses import dataclass, field
-from typing import AsyncIterator
+from typing import TYPE_CHECKING
 
 from agent.context import ContextManager, Session
-from providers.base import ChatProvider, ChatResponse, StreamEvent, ToolCall, ToolCallDefinition
+from providers.base import ChatProvider, ToolCall, ToolCallDefinition
 from tools.base import ToolResult
 from tools.registry import ToolRegistry
 
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
 
 DEFAULT_SYSTEM_PROMPT = """\
 You are Totoro Coding Agent, an expert software engineer and coding assistant.
@@ -49,8 +53,8 @@ class AgentResponse:
     """Agent 最终响应。"""
     session_id: str
     message: str
-    tool_calls: list[dict] = field(default_factory=list)
-    usage: dict = field(default_factory=dict)
+    tool_calls: list[dict[str, Any]] = field(default_factory=list)
+    usage: dict[str, Any] = field(default_factory=dict)
     iterations: int = 0
     finished: bool = True
 
@@ -93,8 +97,6 @@ class AgentEngine:
         project_path: str = "",
     ) -> AgentEngine:
         """便捷工厂方法：自动组装 ToolRegistry + ContextManager。"""
-        from tools.file_tools import ReadFileTool, WriteFileTool, EditFileTool, ListDirTool, SearchFileTool
-        from tools.bash_tool import BashTool
 
         registry = ToolRegistry()
         registry.load_preset(tool_preset)
@@ -152,7 +154,7 @@ class AgentEngine:
         ]
 
         iterations = 0
-        total_tool_calls: list[dict] = []
+        total_tool_calls: list[dict[str, Any]] = []
 
         while iterations < self._config.max_iterations:
             iterations += 1
@@ -230,7 +232,7 @@ class AgentEngine:
                     })
 
                     # 保存 tool_call 到 assistant message
-                    assistant_msg["tool_calls"] = [{
+                    assistant_msg["tool_calls"] = [{  # type: ignore[assignment]
                         "id": tool_call.id,
                         "type": "function",
                         "function": {
@@ -272,7 +274,7 @@ class AgentEngine:
         self,
         user_message: str,
         session: Session | None = None,
-    ) -> AsyncIterator[dict]:
+    ) -> AsyncIterator[dict[str, Any]]:
         """流式版的 run，yield 每个事件。"""
         if session is None:
             session = Session(id=f"session_{uuid.uuid4().hex[:12]}")
@@ -299,7 +301,7 @@ class AgentEngine:
             pending_tool_calls: list[ToolCall] = []
             current_text = ""
 
-            async for event in self._provider.stream_chat(
+            async for event in self._provider.stream_chat(  # type: ignore[attr-defined]
                 messages=messages,
                 tools=tool_defs,
                 max_tokens=self._config.max_tokens,

@@ -1,13 +1,13 @@
 """测试 tools/file_tools.py — 文件操作工具。"""
+
 import pytest
-from pathlib import Path
 
 from tools.file_tools import (
-    ReadFileTool,
-    WriteFileTool,
     EditFileTool,
     ListDirTool,
+    ReadFileTool,
     SearchFileTool,
+    WriteFileTool,
 )
 
 
@@ -26,7 +26,7 @@ class TestReadFileTool:
         tool = ReadFileTool()
         result = await tool.execute(path="/nonexistent/file.py")
         assert result.success is False
-        assert "不存在" in result.error
+        assert result.error is not None and "不存在" in result.error
 
     @pytest.mark.asyncio
     async def test_read_directory(self, tmp_dir):
@@ -102,7 +102,7 @@ class TestEditFileTool:
             replace="replacement",
         )
         assert result.success is False
-        assert "未找到" in result.error
+        assert result.error is not None and "未找到" in result.error
 
     @pytest.mark.asyncio
     async def test_edit_nonexistent_file(self):

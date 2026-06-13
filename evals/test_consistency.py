@@ -31,7 +31,7 @@ _collect()
 
 def test_output_length_ratio():
     """两者输出长度比不应太悬殊（0.3x ~ 3x）。"""
-    for i, (a, o) in enumerate(zip(anthropic_results, openai_results)):
+    for i, (a, o) in enumerate(zip(anthropic_results, openai_results, strict=False)):
         la, lo = max(len(a["text"]), 1), max(len(o["text"]), 1)
         ratio = la / lo
         print(f"  prompt {i}: anthropic={la} chars, openai={lo} chars, ratio={ratio:.2f}")
@@ -40,7 +40,7 @@ def test_output_length_ratio():
 
 def test_latency_ratio():
     """延迟比不应太悬殊。"""
-    for i, (a, o) in enumerate(zip(anthropic_results, openai_results)):
+    for i, (a, o) in enumerate(zip(anthropic_results, openai_results, strict=False)):
         la, lo = max(a["lat"], 0.01), max(o["lat"], 0.01)
         ratio = la / lo
         print(f"  prompt {i}: anthropic={a['lat']:.2f}s, openai={o['lat']:.2f}s, ratio={ratio:.2f}")
@@ -49,7 +49,7 @@ def test_latency_ratio():
 
 def test_usage_completeness():
     """usage 字段都应完整返回。"""
-    for i, (a, o) in enumerate(zip(anthropic_results, openai_results)):
+    for i, (a, o) in enumerate(zip(anthropic_results, openai_results, strict=False)):
         for key in ("input_tokens", "output_tokens"):
             assert a["usage"][key] > 0, f"anthropic prompt {i}: {key}=0"
             assert o["usage"][key] > 0, f"openai prompt {i}: {key}=0"
@@ -59,7 +59,6 @@ def test_usage_completeness():
 def test_streaming_equivalence():
     """流式 vs 非流式输出应内容一致（同一 SDK 内比较）。"""
     import anthropic as anth
-    from openai import OpenAI as OAI
 
     client_anth = anth.Anthropic(
         api_key="dummy", base_url="https://api.longcat.chat/anthropic",

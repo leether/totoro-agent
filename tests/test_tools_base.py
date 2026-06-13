@@ -1,5 +1,8 @@
 """测试 tools/base.py — BaseTool 和 ToolResult。"""
+from typing import Any
+
 import pytest
+
 from tools.base import BaseTool, ToolResult
 
 
@@ -24,7 +27,8 @@ class DummyTool(BaseTool):
             "required": ["value"],
         }
 
-    async def execute(self, *, value: str) -> ToolResult:
+    async def execute(self, **kwargs: Any) -> ToolResult:
+        value = kwargs.get("value", "")
         return ToolResult(success=True, output=f"got: {value}")
 
 

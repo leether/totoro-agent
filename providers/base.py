@@ -1,8 +1,13 @@
 """ChatProvider 协议 — 所有 LLM 后端必须实现此接口。"""
 from __future__ import annotations
 
+from typing import Any
+
 from dataclasses import dataclass, field
-from typing import AsyncIterator, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
 
 
 @dataclass
@@ -18,16 +23,16 @@ class ToolCallDefinition:
     """工具调用定义（发送给 LLM 的 tool/function 描述）。"""
     name: str
     description: str
-    parameters_schema: dict  # JSON Schema
+    parameters_schema: dict[str, Any]  # JSON Schema
 
-    def to_anthropic_dict(self) -> dict:
+    def to_anthropic_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
             "description": self.description,
             "input_schema": self.parameters_schema,
         }
 
-    def to_openai_dict(self) -> dict:
+    def to_openai_dict(self) -> dict[str, Any]:
         return {
             "type": "function",
             "function": {
@@ -43,7 +48,7 @@ class ToolCall:
     """模型返回的一次工具调用。"""
     id: str
     name: str
-    arguments: dict
+    arguments: dict[str, Any]
 
 
 @dataclass
@@ -61,7 +66,7 @@ class StreamEvent:
     type: str  # "text_delta" | "tool_call_start" | "tool_call_end" | "done"
     content: str = ""
     tool_name: str = ""
-    tool_arguments: dict = field(default_factory=dict)
+    tool_arguments: dict[str, Any] = field(default_factory=dict)
     tool_result: str = ""
     usage: TokenUsage | None = None
 
@@ -71,7 +76,7 @@ class ChatProvider(Protocol):
 
     async def chat(
         self,
-        messages: list[dict],
+        messages: list[dict[str, Any]],
         tools: list[ToolCallDefinition] | None = None,
         max_tokens: int = 4096,
         temperature: float = 0.1,
@@ -81,7 +86,7 @@ class ChatProvider(Protocol):
 
     async def stream_chat(
         self,
-        messages: list[dict],
+        messages: list[dict[str, Any]],
         tools: list[ToolCallDefinition] | None = None,
         max_tokens: int = 4096,
         temperature: float = 0.1,

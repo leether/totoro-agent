@@ -1,22 +1,20 @@
 """测试 tools/git_tool.py — Git 工具。"""
-import asyncio
-import os
 import subprocess
 
 import pytest
 
-from tools.git_tool import GitStatusTool, GitDiffTool, GitLogTool
+from tools.git_tool import GitDiffTool, GitLogTool, GitStatusTool
 
 
 @pytest.fixture
 def git_repo(tmp_dir):
     """初始化一个 git 仓库并做一次提交。"""
-    subprocess.run(["git", "init"], cwd=str(tmp_dir), capture_output=True)
-    subprocess.run(["git", "config", "user.email", "test@test.com"], cwd=str(tmp_dir), capture_output=True)
-    subprocess.run(["git", "config", "user.name", "Test"], cwd=str(tmp_dir), capture_output=True)
+    subprocess.run(["git", "init"], cwd=str(tmp_dir), capture_output=True)  # noqa: S607
+    subprocess.run(["git", "config", "user.email", "test@test.com"], cwd=str(tmp_dir), capture_output=True)  # noqa: S607
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=str(tmp_dir), capture_output=True)  # noqa: S607
     (tmp_dir / "file.txt").write_text("hello\n")
-    subprocess.run(["git", "add", "."], cwd=str(tmp_dir), capture_output=True)
-    subprocess.run(["git", "commit", "-m", "initial commit"], cwd=str(tmp_dir), capture_output=True)
+    subprocess.run(["git", "add", "."], cwd=str(tmp_dir), capture_output=True)  # noqa: S607
+    subprocess.run(["git", "commit", "-m", "initial commit"], cwd=str(tmp_dir), capture_output=True)  # noqa: S607
     return tmp_dir
 
 

@@ -3,7 +3,7 @@ import pytest
 
 from agent.context import ContextManager, Session
 from agent.engine import AgentConfig, AgentEngine, AgentResponse
-from providers.base import ChatResponse, ToolCall, TokenUsage
+from providers.base import ChatResponse, TokenUsage, ToolCall
 from tests.conftest import MockProvider
 from tools.registry import ToolRegistry
 
@@ -83,7 +83,7 @@ class TestAgentEngine:
         assert "final" in types
 
         # final 事件包含完整消息
-        final = [e for e in events if e["type"] == "final"][0]
+        final = next(e for e in events if e["type"] == "final")
         assert final["message"] == "Hello from mock!"
 
     @pytest.mark.asyncio

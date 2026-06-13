@@ -3,6 +3,7 @@ Eval 4: 流式输出 — 两种 SDK 流式模式是否正常
 收集所有流式 chunk，最终拼接文本与非流式一致。
 """
 import pytest
+
 from conftest import API_KEY, MODEL
 
 MESSAGES = [{"role": "user", "content": "请用一句话介绍你自己"}]

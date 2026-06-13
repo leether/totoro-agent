@@ -1,8 +1,9 @@
 """Bash 工具 — 在沙箱内执行 Shell 命令。"""
 from __future__ import annotations
 
+from typing import Any
+
 import asyncio
-import shlex
 
 from tools.base import BaseTool, ToolResult
 
@@ -23,10 +24,7 @@ _BLOCKED_ERROR = "命令被安全策略禁止（黑名单匹配）"
 def _is_blocked(command: str) -> bool:
     """检查命令是否匹配黑名单。"""
     cmd_lower = command.lower().strip()
-    for pattern in _BLOCKED_PATTERNS:
-        if pattern.lower() in cmd_lower:
-            return True
-    return False
+    return any(pattern.lower() in cmd_lower for pattern in _BLOCKED_PATTERNS)
 
 
 class BashTool(BaseTool):
@@ -45,7 +43,7 @@ class BashTool(BaseTool):
         return "在沙箱内执行 Shell 命令。支持文件操作、编译、运行脚本等。危险命令（rm -rf / sudo 等）会被拦截。"
 
     @property
-    def parameters_schema(self) -> dict:
+    def parameters_schema(self) -> dict[str, Any]:
         return {
             "type": "object",
             "properties": {
@@ -57,7 +55,7 @@ class BashTool(BaseTool):
             "required": ["command"],
         }
 
-    async def execute(self, *, command: str) -> ToolResult:
+    async def execute(self, *, command: str) -> ToolResult:  # type: ignore[override]
         if _is_blocked(command):
             return ToolResult(success=False, output="", error=_BLOCKED_ERROR)
 
@@ -71,11 +69,11 @@ class BashTool(BaseTool):
                 proc.communicate(),
                 timeout=self._max_time,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             try:
                 proc.kill()
                 await proc.wait()
-            except Exception:
+            except Exception:  # noqa: S110 — best-effort cleanup
                 pass
             return ToolResult(
                 success=False,

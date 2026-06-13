@@ -1,15 +1,17 @@
 """测试 providers/ — Provider 注册表和协议。"""
+from unittest.mock import MagicMock
+
 import pytest
+
 from providers.base import (
     ChatProvider,
     ChatResponse,
     StreamEvent,
+    TokenUsage,
     ToolCall,
     ToolCallDefinition,
-    TokenUsage,
 )
 from providers.registry import ProviderRegistry
-from unittest.mock import MagicMock
 
 
 class TestTokenUsage:
@@ -72,6 +74,7 @@ class TestStreamEvent:
 
     def test_done_with_usage(self):
         e = StreamEvent(type="done", usage=TokenUsage(input_tokens=10, output_tokens=5))
+        assert e.usage is not None
         assert e.usage.input_tokens == 10
 
 

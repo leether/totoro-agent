@@ -1,7 +1,8 @@
 """
 共享 fixtures：为 Anthropic / OpenAI 两种客户端提供统一的评测接口。
 """
-import os, time
+import os
+import time
 
 # 从 .env 读取
 _env_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")

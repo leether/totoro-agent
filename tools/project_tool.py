@@ -1,7 +1,8 @@
 """项目分析工具 — 理解项目结构、依赖、入口文件。"""
 from __future__ import annotations
 
-import ast
+from typing import Any
+
 import json
 from pathlib import Path
 
@@ -20,7 +21,7 @@ class ProjectSummaryTool(BaseTool):
         return "分析指定项目的结构：目录树、入口文件、重要配置文件内容。帮助快速理解代码库。"
 
     @property
-    def parameters_schema(self) -> dict:
+    def parameters_schema(self) -> dict[str, Any]:
         return {
             "type": "object",
             "properties": {
@@ -32,7 +33,7 @@ class ProjectSummaryTool(BaseTool):
             "required": ["path"],
         }
 
-    async def execute(self, *, path: str) -> ToolResult:
+    async def execute(self, *, path: str) -> ToolResult:  # type: ignore[override]
         proj = Path(path)
         if not proj.exists() or not proj.is_dir():
             return ToolResult(success=False, output="", error=f"目录不存在: {path}")
@@ -43,7 +44,7 @@ class ProjectSummaryTool(BaseTool):
         sections.append("## 目录树")
         lines: list[str] = [str(proj)]
 
-        def _walk(p: Path, level: int, prefix: str = ""):
+        def _walk(p: Path, level: int, prefix: str = "") -> None:
             if level > 3:
                 return
             entries = sorted(p.iterdir(), key=lambda e: (not e.is_dir(), e.name))
@@ -87,15 +88,15 @@ class ProjectSummaryTool(BaseTool):
                 deps = pkg.get("dependencies", {})
                 dev_deps = pkg.get("devDependencies", {})
                 dep_lines = [f"- {k}: {v}" for k, v in {**deps, **dev_deps}.items()]
-                sections.append(f"### package.json\n" + "\n".join(dep_lines[:30]))
-            except Exception:
+                sections.append("### package.json\n" + "\n".join(dep_lines[:30]))
+            except Exception:  # noqa: S110 — best-effort parse
                 pass
 
         # 4. Python 文件统计
         py_files = list(proj.rglob("*.py"))
         js_files = list(proj.rglob("*.js"))
         ts_files = list(proj.rglob("*.ts"))
-        sections.append(f"\n## 文件统计")
+        sections.append("\n## 文件统计")
         sections.append(f"Python: {len(py_files)}  |  JavaScript: {len(js_files)}  |  TypeScript: {len(ts_files)}")
 
         output = "\n".join(sections)

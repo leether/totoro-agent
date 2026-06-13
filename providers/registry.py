@@ -1,7 +1,10 @@
 """ProviderRegistry — LLM 后端注册表，支持运行时切换。"""
 from __future__ import annotations
 
-from providers.base import ChatProvider
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from providers.base import ChatProvider
 
 _REGISTRY: dict[str, ChatProvider] = {}
 
@@ -29,9 +32,9 @@ class ProviderRegistry:
         _REGISTRY.clear()
 
 
-def register_provider(name: str):
+def register_provider(name: str) -> Any:
     """装饰器：自动注册 provider 类实例。"""
-    def decorator(provider_cls):
+    def decorator(provider_cls: Any) -> Any:
         instance = provider_cls()
         ProviderRegistry.register(name, instance)
         return provider_cls

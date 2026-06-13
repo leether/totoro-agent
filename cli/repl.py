@@ -8,24 +8,20 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from providers.base import ChatProvider
 from rich.console import Console
 from rich.panel import Panel
+from rich.prompt import Prompt
 from rich.syntax import Syntax
 from rich.table import Table
-from rich.text import Text
-from rich.prompt import Prompt
-from rich.spinner import Spinner
-from rich.live import Live
-from rich.markdown import Markdown
 
 from agent.context import Session
-from agent.engine import AgentEngine, AgentConfig
+from agent.engine import AgentConfig, AgentEngine
 from config import AgentSettings
-from providers.totoro_provider import TotoroProvider
-from providers.openai_provider import OpenAIProvider
 from providers.anthropic_provider import AnthropicProvider
+from providers.openai_provider import OpenAIProvider
+from providers.totoro_provider import TotoroProvider
 from tools.registry import ToolRegistry
-
 
 # ─── 配色方案 ───────────────────────────────────────────
 AGENT_COLOR = "cyan"        # Agent 名称 & 标题
@@ -53,7 +49,7 @@ def _guess_language(output: str, tool_name: str) -> str:
     return "text"
 
 
-def _Display_tool_result(tool_name: str, output: str, output_preview: str) -> None:
+def _display_tool_result(tool_name: str, output: str, output_preview: str) -> None:
     """根据工具类型选择合适的 Rich 渲染方式。"""
     lang = _guess_language(output, tool_name)
 
@@ -92,13 +88,15 @@ def _display_welcome(settings: AgentSettings, project_path: str) -> None:
 
 def _get_model(settings: AgentSettings) -> str:
     provider = settings.resolve_provider()
-    if provider == "totoro":
-        return settings.totoro.model
-    elif provider == "openai":
-        return settings.openai.model
-    elif provider == "anthropic":
-        return settings.anthropic.model
-    return "(default)"
+    match provider:
+        case "totoro":
+            return settings.totoro.model
+        case "openai":
+            return settings.openai.model
+        case "anthropic":
+            return settings.anthropic.model
+        case _:
+            return "(default)"
 
 
 def _display_tool_header(count: int, tool_name: str) -> None:
@@ -137,23 +135,23 @@ def _display_thinking() -> None:
 
 # ─── Setup helpers ───────────────────────────────────────
 
-def _build_provider(settings: AgentSettings):
+def _build_provider(settings: AgentSettings) -> ChatProvider:
     """根据配置构建 provider。"""
     name = settings.resolve_provider()
     if name == "totoro":
-        return TotoroProvider(
+        return TotoroProvider(  # type: ignore[return-value]
             api_key=settings.totoro.api_key,
             base_url=settings.totoro.base_url,
             model=settings.totoro.model,
         )
     elif name == "openai":
-        return OpenAIProvider(
+        return OpenAIProvider(  # type: ignore[return-value]
             api_key=settings.openai.api_key,
             base_url=settings.openai.base_url,
             model=settings.openai.model,
         )
     elif name == "anthropic":
-        return AnthropicProvider(
+        return AnthropicProvider(  # type: ignore[return-value]
             api_key=settings.anthropic.api_key,
             model=settings.anthropic.model,
         )
@@ -186,7 +184,7 @@ def _build_engine(settings: AgentSettings, project_path: str = "") -> AgentEngin
 
 # ─── REPL main ───────────────────────────────────────────
 
-def main():
+def main() -> None:
     """CLI 入口: longcat-repl [project_path]."""
     import argparse
     parser = argparse.ArgumentParser(description="LongCat Coding Agent REPL")
@@ -204,7 +202,7 @@ def main():
     asyncio.run(run_repl(settings, args.project_path))
 
 
-async def run_repl(settings: AgentSettings, project_path: str = "."):
+async def run_repl(settings: AgentSettings, project_path: str = ".") -> None:
     """启动交互式 REPL。"""
     project_path = str(Path(project_path).resolve())
     engine = _build_engine(settings, project_path)

@@ -2,8 +2,11 @@
 Eval 6: 汇总报告 — 一次跑完全部维度，整理对比表。
 需要在其他 test 文件已经触发 API 调用后运行。
 """
-import json, os, time, statistics
-from conftest import run_benchmark, API_KEY
+import json
+import os
+import statistics
+
+from conftest import run_benchmark
 
 MODEL = "LongCat-2.0-Preview"
 REPEAT = 10

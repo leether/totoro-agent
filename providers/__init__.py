@@ -5,8 +5,8 @@ from providers.registry import ProviderRegistry
 __all__ = [
     "ChatProvider",
     "ChatResponse",
+    "ProviderRegistry",
     "StreamEvent",
     "TokenUsage",
     "ToolCallDefinition",
-    "ProviderRegistry",
 ]

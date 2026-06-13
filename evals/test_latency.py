@@ -3,6 +3,7 @@ Eval 2: 延迟对比 — 多轮对话 & 长输出的延迟表现
 各跑 3 次取平均，不做严格断言，输出对比表。
 """
 import pytest
+
 from conftest import run_benchmark
 
 MULTI_TURN = [

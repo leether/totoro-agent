@@ -1,8 +1,9 @@
 """Git 工具 — git status / diff / log。"""
 from __future__ import annotations
 
+from typing import Any
+
 import asyncio
-import os
 
 from tools.base import BaseTool, ToolResult
 
@@ -23,7 +24,7 @@ async def _run_git(args: str, cwd: str = ".") -> tuple[int, str, str]:
             stdout_b.decode("utf-8", errors="replace").strip(),
             stderr_b.decode("utf-8", errors="replace").strip(),
         )
-    except asyncio.TimeoutError:
+    except TimeoutError:
         return 1, "", "命令超时"
     except Exception as e:
         return 1, "", str(e)
@@ -41,7 +42,7 @@ class GitStatusTool(BaseTool):
         return "查看当前 Git 仓库的工作状态（已修改、已暂存、未跟踪的文件）。"
 
     @property
-    def parameters_schema(self) -> dict:
+    def parameters_schema(self) -> dict[str, Any]:
         return {
             "type": "object",
             "properties": {
@@ -52,7 +53,7 @@ class GitStatusTool(BaseTool):
             },
         }
 
-    async def execute(self, *, path: str = ".") -> ToolResult:
+    async def execute(self, *, path: str = ".") -> ToolResult:  # type: ignore[override]
         rc, out, err = await _run_git("status --short", cwd=path)
         if rc != 0:
             return ToolResult(success=False, output="", error=err)
@@ -71,7 +72,7 @@ class GitDiffTool(BaseTool):
         return "查看工作区的代码变更（diff）。可指定文件路径查看特定文件的变更。"
 
     @property
-    def parameters_schema(self) -> dict:
+    def parameters_schema(self) -> dict[str, Any]:
         return {
             "type": "object",
             "properties": {
@@ -86,7 +87,7 @@ class GitDiffTool(BaseTool):
             },
         }
 
-    async def execute(self, *, path: str = ".", file: str = "") -> ToolResult:
+    async def execute(self, *, path: str = ".", file: str = "") -> ToolResult:  # type: ignore[override]
         args = "diff HEAD"
         if file:
             args += f" -- {file}"
@@ -108,7 +109,7 @@ class GitLogTool(BaseTool):
         return "查看 Git 提交历史。"
 
     @property
-    def parameters_schema(self) -> dict:
+    def parameters_schema(self) -> dict[str, Any]:
         return {
             "type": "object",
             "properties": {
@@ -123,7 +124,7 @@ class GitLogTool(BaseTool):
             },
         }
 
-    async def execute(self, *, path: str = ".", limit: int = 10) -> ToolResult:
+    async def execute(self, *, path: str = ".", limit: int = 10) -> ToolResult:  # type: ignore[override]
         args = f"log --oneline -{limit}"
         rc, out, err = await _run_git(args, cwd=path)
         if rc != 0:

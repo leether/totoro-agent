@@ -1,9 +1,8 @@
 """测试 sandbox/executor.py — CommandExecutor。"""
-import asyncio
 
 import pytest
 
-from sandbox.executor import CommandExecutor, SandboxConfig, SubprocessExecutor
+from sandbox.executor import SandboxConfig, SubprocessExecutor
 
 
 class TestSandboxConfig:
@@ -24,27 +23,27 @@ class TestSubprocessExecutor:
     @pytest.mark.asyncio
     async def test_execute_echo(self):
         executor = SubprocessExecutor()
-        rc, stdout, stderr = await executor.execute("echo hello")
+        rc, stdout, _stderr = await executor.execute("echo hello")
         assert rc == 0
         assert "hello" in stdout
 
     @pytest.mark.asyncio
     async def test_execute_failure(self):
         executor = SubprocessExecutor()
-        rc, stdout, stderr = await executor.execute("false")
+        rc, _stdout, _stderr = await executor.execute("false")
         assert rc != 0
 
     @pytest.mark.asyncio
     async def test_execute_timeout(self):
         executor = SubprocessExecutor(config=SandboxConfig(max_execution_time=1))
-        rc, stdout, stderr = await executor.execute("sleep 10")
+        rc, _stdout, stderr = await executor.execute("sleep 10")
         assert rc == 1
         assert "超时" in stderr
 
     @pytest.mark.asyncio
     async def test_output_truncation(self):
         executor = SubprocessExecutor(config=SandboxConfig(max_output_size=10))
-        rc, stdout, stderr = await executor.execute("echo 'a' * 100")
+        _rc, stdout, _stderr = await executor.execute("echo 'a' * 100")
         assert len(stdout) <= 10
 
     def test_is_protocol(self):

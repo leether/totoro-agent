@@ -1,5 +1,6 @@
 """测试 tools/bash_tool.py — Bash 工具。"""
 import pytest
+
 from tools.bash_tool import BashTool, _is_blocked
 
 
@@ -56,14 +57,14 @@ class TestBashTool:
         tool = BashTool()
         result = await tool.execute(command="rm -rf /")
         assert result.success is False
-        assert "禁止" in result.error
+        assert result.error is not None and "禁止" in result.error
 
     @pytest.mark.asyncio
     async def test_output_truncation(self):
         tool = BashTool(max_output_size=50)
         result = await tool.execute(command="python3 -c \"print('x' * 200)\"")
         assert result.success is True
-        assert "截断" in result.output
+        assert result.output is not None and "截断" in result.output
 
     @pytest.mark.asyncio
     async def test_metadata(self):

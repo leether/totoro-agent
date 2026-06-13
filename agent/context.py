@@ -1,25 +1,28 @@
 """ContextManager — 消息历史、Token 管理、压缩、会话持久化。"""
 from __future__ import annotations
 
+from typing import Any
+
 import json
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING
 
-from tools.registry import ToolRegistry
+if TYPE_CHECKING:
+    from tools.registry import ToolRegistry
 
 
 @dataclass
 class Session:
     """会话模型 — 隔离不同用户的 Agent 上下文。"""
     id: str
-    messages: list[dict] = field(default_factory=list)
+    messages: list[dict[str, Any]] = field(default_factory=list)
     created_at: float = field(default_factory=time.time)
     updated_at: float = field(default_factory=time.time)
-    metadata: dict = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "messages": self.messages,
@@ -29,7 +32,7 @@ class Session:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> Session:
+    def from_dict(cls, data: dict[str, Any]) -> Session:
         return cls(
             id=data["id"],
             messages=data.get("messages", []),
@@ -79,10 +82,10 @@ class ContextManager:
 
     def build_messages(
         self,
-        history: list[dict],
+        history: list[dict[str, Any]],
         tool_registry: ToolRegistry | None = None,
         project_context: str = "",
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         """
         组装完整消息列表注入 LLM。
 
@@ -90,7 +93,7 @@ class ContextManager:
         1. system prompt（含工具定义 + 项目上下文）
         2. 历史消息（可能经过压缩）
         """
-        messages: list[dict] = []
+        messages: list[dict[str, Any]] = []
 
         # System prompt
         system_content = self._system_prompt
@@ -111,7 +114,7 @@ class ContextManager:
 
         return messages
 
-    def estimate_tokens(self, messages: list[dict]) -> int:
+    def estimate_tokens(self, messages: list[dict[str, Any]]) -> int:
         """
         快速估算 Token 数。
         使用启发式：1 token ≈ 4 字符（英文）或 ≈ 1.5 字符（中文）。
@@ -129,7 +132,7 @@ class ContextManager:
         # 粗略估算：混合内容约 1 token = 3 字符
         return total_chars // 3
 
-    def maybe_compress(self, messages: list[dict]) -> list[dict]:
+    def maybe_compress(self, messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """超过 Token 阈值时压缩历史。"""
         token_count = self.estimate_tokens(messages)
         threshold = int(self._max_tokens * self._compression_threshold)
@@ -160,7 +163,7 @@ class ContextManager:
 
         return compressed
 
-    def _summarize(self, messages: list[dict]) -> str:
+    def _summarize(self, messages: list[dict[str, Any]]) -> str:
         """生成消息摘要（轻量版 — 截取每段前 100 字符）。"""
         parts: list[str] = []
         for msg in messages:
@@ -178,11 +181,11 @@ class ContextManager:
 
         return "\n".join(parts[:20])  # 最多 20 条
 
-    def compress_history(self, messages: list[dict]) -> list[dict]:
+    def compress_history(self, messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """公开接口：压缩历史消息。"""
         return self.maybe_compress(messages)
 
-    def count_tokens(self, messages: list[dict]) -> int:
+    def count_tokens(self, messages: list[dict[str, Any]]) -> int:
         """公开接口：获取估算 token 数。"""
         return self.estimate_tokens(messages)
 

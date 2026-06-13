@@ -1,9 +1,9 @@
 """文件操作工具 — read / write / edit / list / search。"""
 from __future__ import annotations
 
-import os
+from typing import Any
+
 import re
-import subprocess
 from pathlib import Path
 
 from tools.base import BaseTool, ToolResult
@@ -21,7 +21,7 @@ class ReadFileTool(BaseTool):
         return "读取指定路径的文件内容。可指定 start_line 和 end_line 只读取部分内容。"
 
     @property
-    def parameters_schema(self) -> dict:
+    def parameters_schema(self) -> dict[str, Any]:
         return {
             "type": "object",
             "properties": {
@@ -41,7 +41,7 @@ class ReadFileTool(BaseTool):
             "required": ["path"],
         }
 
-    async def execute(self, *, path: str, start_line: int = 0, end_line: int = 0) -> ToolResult:
+    async def execute(self, *, path: str, start_line: int = 0, end_line: int = 0) -> ToolResult:  # type: ignore[override]
         file_path = Path(path)
 
         if not file_path.exists():
@@ -59,8 +59,8 @@ class ReadFileTool(BaseTool):
 
         if start_line > 0:
             s = max(0, start_line - 1)
-            e = total_lines if end_line <= 0 else min(end_line, total_lines)
-            lines = lines[s:e]
+            e_end = total_lines if end_line <= 0 else min(end_line, total_lines)
+            lines = lines[s:e_end]
 
         content = "\n".join(lines)
         meta = {"path": str(file_path), "total_lines": total_lines, "returned_lines": len(lines)}
@@ -79,7 +79,7 @@ class WriteFileTool(BaseTool):
         return "将内容写入指定路径的文件。如果文件已存在则覆盖，如果不存在则创建。"
 
     @property
-    def parameters_schema(self) -> dict:
+    def parameters_schema(self) -> dict[str, Any]:
         return {
             "type": "object",
             "properties": {
@@ -95,7 +95,7 @@ class WriteFileTool(BaseTool):
             "required": ["path", "content"],
         }
 
-    async def execute(self, *, path: str, content: str) -> ToolResult:
+    async def execute(self, *, path: str, content: str) -> ToolResult:  # type: ignore[override]
         file_path = Path(path)
 
         try:
@@ -127,7 +127,7 @@ class EditFileTool(BaseTool):
         )
 
     @property
-    def parameters_schema(self) -> dict:
+    def parameters_schema(self) -> dict[str, Any]:
         return {
             "type": "object",
             "properties": {
@@ -147,7 +147,7 @@ class EditFileTool(BaseTool):
             "required": ["path", "search", "replace"],
         }
 
-    async def execute(self, *, path: str, search: str, replace: str) -> ToolResult:
+    async def execute(self, *, path: str, search: str, replace: str) -> ToolResult:  # type: ignore[override]
         file_path = Path(path)
 
         if not file_path.exists():
@@ -191,7 +191,7 @@ class ListDirTool(BaseTool):
         return "列出指定目录的文件和子目录结构。支持 depth 控制递归深度。"
 
     @property
-    def parameters_schema(self) -> dict:
+    def parameters_schema(self) -> dict[str, Any]:
         return {
             "type": "object",
             "properties": {
@@ -207,7 +207,7 @@ class ListDirTool(BaseTool):
             "required": ["path"],
         }
 
-    async def execute(self, *, path: str, depth: int = 2) -> ToolResult:
+    async def execute(self, *, path: str, depth: int = 2) -> ToolResult:  # type: ignore[override]
         dir_path = Path(path)
 
         if not dir_path.exists():
@@ -218,7 +218,7 @@ class ListDirTool(BaseTool):
         depth = min(max(1, depth), 5)
         lines: list[str] = []
 
-        def _walk(p: Path, level: int, prefix: str = ""):
+        def _walk(p: Path, level: int, prefix: str = "") -> None:
             if level > depth:
                 return
             entries = sorted(p.iterdir(), key=lambda e: (not e.is_dir(), e.name))
@@ -252,7 +252,7 @@ class SearchFileTool(BaseTool):
         return "在文件中搜索匹配指定模式的文本行（类似 grep）。支持正则表达式。"
 
     @property
-    def parameters_schema(self) -> dict:
+    def parameters_schema(self) -> dict[str, Any]:
         return {
             "type": "object",
             "properties": {
@@ -272,7 +272,7 @@ class SearchFileTool(BaseTool):
             "required": ["pattern", "path"],
         }
 
-    async def execute(self, *, pattern: str, path: str, context: int = 0) -> ToolResult:
+    async def execute(self, *, pattern: str, path: str, context: int = 0) -> ToolResult:  # type: ignore[override]
         search_path = Path(path)
 
         if not search_path.exists():

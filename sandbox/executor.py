@@ -15,10 +15,10 @@ class SandboxConfig:
     """沙箱配置。"""
     max_execution_time: int = 30       # 单次命令超时（秒）
     max_output_size: int = 10_000     # 输出截断长度
-    allowed_paths: list[str] = None    # 可写路径白名单（None = 不限制）
-    blocked_commands: list[str] = None  # 命令黑名单
+    allowed_paths: list[str] | None = None    # 可写路径白名单（None = 不限制）
+    blocked_commands: list[str] | None = None  # 命令黑名单
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.allowed_paths is None:
             self.allowed_paths = []
         if self.blocked_commands is None:
@@ -53,11 +53,11 @@ class SubprocessExecutor:
                 proc.communicate(),
                 timeout=self._config.max_execution_time,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             try:
                 proc.kill()
                 await proc.wait()
-            except Exception:
+            except Exception:  # noqa: S110 — best-effort cleanup
                 pass
             return 1, "", f"命令执行超时（超过 {self._config.max_execution_time}s）"
 

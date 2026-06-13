@@ -1,7 +1,5 @@
 """测试 config.py — AgentSettings。"""
-import os
 
-import pytest
 
 
 class TestAgentSettings:

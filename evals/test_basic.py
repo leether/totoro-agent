@@ -2,6 +2,7 @@
 Eval 1: 基础能力 — 两种 SDK 都能正常返回文本
 """
 import pytest
+
 from conftest import run_benchmark
 
 MESSAGES = [{"role": "user", "content": "请用一句话介绍你自己"}]

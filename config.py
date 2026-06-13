@@ -5,7 +5,6 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
-
 _env_file = Path(__file__).parent / ".env"
 if _env_file.exists():
     for _line in _env_file.read_text().splitlines():

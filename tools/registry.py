@@ -1,15 +1,19 @@
 """ToolRegistry — 工具注册中心，管理 JSON Schema 生成和工具实例查找。"""
 from __future__ import annotations
 
-from collections import OrderedDict
+from typing import Any
 
-from tools.base import BaseTool
+from collections import OrderedDict
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from tools.base import BaseTool
 
 
 class ToolRegistry:
     """工具注册中心。支持按名称注册、查找、批量加载预设。"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._tools: OrderedDict[str, BaseTool] = OrderedDict()
 
     def register(self, tool: BaseTool) -> None:
@@ -24,7 +28,7 @@ class ToolRegistry:
         """列出所有已注册工具。"""
         return list(self._tools.values())
 
-    def tool_definitions(self) -> list[dict]:
+    def tool_definitions(self) -> list[dict[str, Any]]:
         """生成所有工具的 JSON Schema 列表（注入 LLM system prompt）。"""
         return [
             {
@@ -39,7 +43,7 @@ class ToolRegistry:
         """列出所有工具名称。"""
         return list(self._tools.keys())
 
-    def load_preset(self, preset: str, **kwargs) -> None:
+    def load_preset(self, preset: str, **kwargs: Any) -> None:
         """
         加载预设工具集。
 
@@ -48,14 +52,14 @@ class ToolRegistry:
           - "full":   core + Git + Lint + Test + Web + Project
           - "readonly": 文件读取 + 搜索（无写入）
         """
+        from tools.bash_tool import BashTool
         from tools.file_tools import (
-            ReadFileTool,
-            WriteFileTool,
             EditFileTool,
             ListDirTool,
+            ReadFileTool,
             SearchFileTool,
+            WriteFileTool,
         )
-        from tools.bash_tool import BashTool
 
         if preset == "readonly":
             self.register(ReadFileTool())
@@ -72,9 +76,9 @@ class ToolRegistry:
         self.register(BashTool(**kwargs))
 
         if preset == "full":
-            from tools.web_tools import WebSearchTool, WebFetchTool
             from tools.git_tool import GitStatusTool
             from tools.project_tool import ProjectSummaryTool
+            from tools.web_tools import WebFetchTool, WebSearchTool
 
             self.register(WebSearchTool())
             self.register(WebFetchTool())

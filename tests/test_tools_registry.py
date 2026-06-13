@@ -1,5 +1,4 @@
 """测试 tools/registry.py — ToolRegistry。"""
-import pytest
 from tools.base import BaseTool, ToolResult
 from tools.registry import ToolRegistry
 

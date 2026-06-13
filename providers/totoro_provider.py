@@ -4,20 +4,24 @@ LongCat API 兼容 Anthropic 的 /v1/messages 接口格式，直接 HTTP 调用�
 """
 from __future__ import annotations
 
+from typing import Any
+
 import json
 import os
-from typing import AsyncIterator
+from typing import TYPE_CHECKING
 
 import httpx
 
 from providers.base import (
-    ChatProvider,
     ChatResponse,
     StreamEvent,
+    TokenUsage,
     ToolCall,
     ToolCallDefinition,
-    TokenUsage,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
 
 
 class TotoroProvider:
@@ -39,7 +43,7 @@ class TotoroProvider:
 
     # ---------- 内部 helpers ----------
 
-    def _headers(self, stream: bool = False) -> dict:
+    def _headers(self, stream: bool = False) -> dict[str, Any]:
         h = {
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
@@ -50,7 +54,7 @@ class TotoroProvider:
             h["accept"] = "application/json"
         return h
 
-    def _serialize_tools(self, tools: list[ToolCallDefinition]) -> list[dict]:
+    def _serialize_tools(self, tools: list[ToolCallDefinition]) -> list[dict[str, Any]]:
         """将 ToolCallDefinition 转为 Anthropic tool schema。"""
         return [
             {
@@ -61,7 +65,7 @@ class TotoroProvider:
             for t in tools
         ]
 
-    def _parse_response(self, data: dict) -> ChatResponse:
+    def _parse_response(self, data: dict[str, Any]) -> ChatResponse:
         """解析 Anthropic /v1/messages 响应。"""
         text_parts: list[str] = []
         tool_calls: list[ToolCall] = []
@@ -89,14 +93,14 @@ class TotoroProvider:
             finish_reason=data.get("stop_reason", "stop") or "stop",
         )
 
-    def _parse_sse_event(self, line: str) -> dict | None:
+    def _parse_sse_event(self, line: str) -> dict[str, Any] | None:
         """解析单行 SSE 事件。"""
         if line.startswith("data: "):
             payload = line[6:]
             if payload == "[DONE]":
                 return {"type": "message_stop"}
             try:
-                return json.loads(payload)
+                return json.loads(payload)  # type: ignore[no-any-return]
             except json.JSONDecodeError:
                 return None
         return None
@@ -105,7 +109,7 @@ class TotoroProvider:
 
     async def chat(
         self,
-        messages: list[dict],
+        messages: list[dict[str, Any]],
         tools: list[ToolCallDefinition] | None = None,
         max_tokens: int = 4096,
         temperature: float = 0.1,
@@ -117,7 +121,7 @@ class TotoroProvider:
             system_content = messages[0]["content"]
             chat_messages = messages[1:]
 
-        payload: dict = {
+        payload: dict[str, Any] = {
             "model": self._model,
             "max_tokens": max_tokens,
             "messages": chat_messages,
@@ -143,7 +147,7 @@ class TotoroProvider:
 
     async def stream_chat(
         self,
-        messages: list[dict],
+        messages: list[dict[str, Any]],
         tools: list[ToolCallDefinition] | None = None,
         max_tokens: int = 4096,
         temperature: float = 0.1,
@@ -154,7 +158,7 @@ class TotoroProvider:
             system_content = messages[0]["content"]
             chat_messages = messages[1:]
 
-        payload: dict = {
+        payload: dict[str, Any] = {
             "model": self._model,
             "max_tokens": max_tokens,
             "messages": chat_messages,
@@ -166,19 +170,17 @@ class TotoroProvider:
         if tools:
             payload["tools"] = self._serialize_tools(tools)
 
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
-            async with client.stream(
-                "POST",
-                self._base_url,
-                headers=self._headers(stream=True),
-                json=payload,
-            ) as resp:
+        async with httpx.AsyncClient(timeout=self._timeout) as client, client.stream(
+            "POST",
+            self._base_url,
+            headers=self._headers(stream=True),
+            json=payload,
+        ) as resp:
                 resp.raise_for_status()
 
                 # 收集增量状态
                 text_buffer = ""
                 current_tool_name = ""
-                current_tool_id = ""
                 current_tool_args_buffer = ""
                 collecting_tool_args = False
 
@@ -197,7 +199,7 @@ class TotoroProvider:
                         if block.get("type") == "text":
                             pass  # 等 delta
                         elif block.get("type") == "tool_use":
-                            current_tool_id = block.get("id", "")
+                            block.get("id", "")
                             current_tool_name = block.get("name", "")
                             current_tool_args_buffer = ""
                             collecting_tool_args = True
@@ -223,11 +225,10 @@ class TotoroProvider:
                                 tool_arguments=args,
                             )
                             current_tool_name = ""
-                            current_tool_id = ""
                             collecting_tool_args = False
 
                     elif etype == "message_delta":
-                        stop_reason = event.get("delta", {}).get("stop_reason")
+                        event.get("delta", {}).get("stop_reason")
                         usage = event.get("usage", {})
                         yield StreamEvent(
                             type="done",

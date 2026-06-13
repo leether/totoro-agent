@@ -4,20 +4,24 @@
 """
 from __future__ import annotations
 
+from typing import Any
+
 import json
 import os
-from typing import AsyncIterator
+from typing import TYPE_CHECKING
 
 import httpx
 
 from providers.base import (
-    ChatProvider,
     ChatResponse,
     StreamEvent,
+    TokenUsage,
     ToolCall,
     ToolCallDefinition,
-    TokenUsage,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
 
 
 class AnthropicProvider:
@@ -36,14 +40,14 @@ class AnthropicProvider:
         self._model = model
         self._timeout = timeout
 
-    def _headers(self) -> dict:
+    def _headers(self) -> dict[str, Any]:
         return {
             "x-api-key": self._api_key,
             "anthropic-version": "2023-06-01",
             "content-type": "application/json",
         }
 
-    def _serialize_tools(self, tools: list[ToolCallDefinition]) -> list[dict]:
+    def _serialize_tools(self, tools: list[ToolCallDefinition]) -> list[dict[str, Any]]:
         return [
             {
                 "name": t.name,
@@ -53,7 +57,7 @@ class AnthropicProvider:
             for t in tools
         ]
 
-    def _parse_response(self, data: dict) -> ChatResponse:
+    def _parse_response(self, data: dict[str, Any]) -> ChatResponse:
         text_parts: list[str] = []
         tool_calls: list[ToolCall] = []
 
@@ -82,7 +86,7 @@ class AnthropicProvider:
 
     async def chat(
         self,
-        messages: list[dict],
+        messages: list[dict[str, Any]],
         tools: list[ToolCallDefinition] | None = None,
         max_tokens: int = 4096,
         temperature: float = 0.1,
@@ -93,7 +97,7 @@ class AnthropicProvider:
             system_content = messages[0]["content"]
             chat_messages = messages[1:]
 
-        payload: dict = {
+        payload: dict[str, Any] = {
             "model": self._model,
             "max_tokens": max_tokens,
             "messages": chat_messages,
@@ -117,7 +121,7 @@ class AnthropicProvider:
 
     async def stream_chat(
         self,
-        messages: list[dict],
+        messages: list[dict[str, Any]],
         tools: list[ToolCallDefinition] | None = None,
         max_tokens: int = 4096,
         temperature: float = 0.1,
@@ -128,7 +132,7 @@ class AnthropicProvider:
             system_content = messages[0]["content"]
             chat_messages = messages[1:]
 
-        payload: dict = {
+        payload: dict[str, Any] = {
             "model": self._model,
             "max_tokens": max_tokens,
             "messages": chat_messages,
@@ -140,17 +144,15 @@ class AnthropicProvider:
         if tools:
             payload["tools"] = self._serialize_tools(tools)
 
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
-            async with client.stream(
-                "POST",
-                self._base_url,
-                headers={**self._headers(), "accept": "text/event-stream"},
-                json=payload,
-            ) as resp:
+        async with httpx.AsyncClient(timeout=self._timeout) as client, client.stream(
+            "POST",
+            self._base_url,
+            headers={**self._headers(), "accept": "text/event-stream"},
+            json=payload,
+        ) as resp:
                 resp.raise_for_status()
 
                 current_tool_name = ""
-                current_tool_id = ""
                 current_tool_args_buffer = ""
                 collecting_tool = False
 
@@ -175,7 +177,7 @@ class AnthropicProvider:
                     if etype == "content_block_start":
                         block = event.get("content_block", {})
                         if block.get("type") == "tool_use":
-                            current_tool_id = block.get("id", "")
+                            block.get("id", "")
                             current_tool_name = block.get("name", "")
                             current_tool_args_buffer = ""
                             collecting_tool = True
@@ -200,7 +202,6 @@ class AnthropicProvider:
                                 tool_arguments=args,
                             )
                             current_tool_name = ""
-                            current_tool_id = ""
                             collecting_tool = False
 
                     elif etype == "message_delta":

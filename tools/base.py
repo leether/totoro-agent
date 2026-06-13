@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass
@@ -11,7 +12,7 @@ class ToolResult:
     success: bool
     output: str
     error: str | None = None
-    metadata: dict = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_message(self) -> str:
         """转换为可注入 LLM 的 message 文本。"""
@@ -36,11 +37,11 @@ class BaseTool(ABC):
         ...
 
     @property
-    def parameters_schema(self) -> dict:
+    def parameters_schema(self) -> dict[str, Any]:
         """参数 JSON Schema（默认空对象，子类可覆盖）。"""
         return {"type": "object", "properties": {}}
 
     @abstractmethod
-    async def execute(self, **kwargs) -> ToolResult:
+    async def execute(self, **kwargs: Any) -> ToolResult:
         """执行工具。"""
         ...

@@ -1,7 +1,11 @@
 """网络工具 — WebSearch / WebFetch。"""
 from __future__ import annotations
 
+from typing import Any
+
+import urllib.parse
 import urllib.request
+
 from tools.base import BaseTool, ToolResult
 
 
@@ -17,7 +21,7 @@ class WebSearchTool(BaseTool):
         return "在网络上搜索信息，获取实时答案。适合查找文档、解决方案、最新资讯等。"
 
     @property
-    def parameters_schema(self) -> dict:
+    def parameters_schema(self) -> dict[str, Any]:
         return {
             "type": "object",
             "properties": {
@@ -29,12 +33,12 @@ class WebSearchTool(BaseTool):
             "required": ["query"],
         }
 
-    async def execute(self, *, query: str) -> ToolResult:
+    async def execute(self, *, query: str) -> ToolResult:  # type: ignore[override]
         # 使用 DuckDuckGo 即时回答 API
         url = f"https://api.duckduckgo.com/?q={urllib.parse.quote(query)}&format=json&no_html=1&skip_disambig=1"
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "totoro-agent/1.0"})
-            with urllib.request.urlopen(req, timeout=15) as resp:
+            req = urllib.request.Request(url, headers={"User-Agent": "totoro-agent/1.0"})  # noqa: S310
+            with urllib.request.urlopen(req, timeout=15) as resp:  # noqa: S310
                 import json
                 data = json.loads(resp.read().decode("utf-8"))
 
@@ -67,7 +71,7 @@ class WebFetchTool(BaseTool):
         return "获取指定 URL 的页面内容。适合读取 API 文档、技术文章等。"
 
     @property
-    def parameters_schema(self) -> dict:
+    def parameters_schema(self) -> dict[str, Any]:
         return {
             "type": "object",
             "properties": {
@@ -79,10 +83,10 @@ class WebFetchTool(BaseTool):
             "required": ["url"],
         }
 
-    async def execute(self, *, url: str) -> ToolResult:
+    async def execute(self, *, url: str) -> ToolResult:  # type: ignore[override]
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "totoro-agent/1.0"})
-            with urllib.request.urlopen(req, timeout=15) as resp:
+            req = urllib.request.Request(url, headers={"User-Agent": "totoro-agent/1.0"})  # noqa: S310
+            with urllib.request.urlopen(req, timeout=15) as resp:  # noqa: S310
                 content = resp.read().decode("utf-8", errors="replace")
 
             # 简单去除 HTML 标签

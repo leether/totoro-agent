@@ -2,6 +2,7 @@
 Eval 5: 错误处理 — 各种异常场景下 SDK 的表现
 """
 import pytest
+
 from conftest import API_KEY
 
 
@@ -35,7 +36,7 @@ def test_anthropic_invalid_key():
 
 
 def test_openai_invalid_key():
-    from openai import OpenAI, AuthenticationError
+    from openai import AuthenticationError, OpenAI
     bad = OpenAI(api_key="invalid_key_xxx", base_url="https://api.longcat.chat/openai")
     with pytest.raises(AuthenticationError):
         bad.chat.completions.create(
@@ -56,7 +57,7 @@ def test_anthropic_empty_messages():
 
 
 def test_openai_empty_messages():
-    from openai import OpenAI, BadRequestError
+    from openai import BadRequestError
     client = _openai_client()
     with pytest.raises(BadRequestError):
         client.chat.completions.create(
@@ -77,7 +78,7 @@ def test_anthropic_bad_model():
 
 
 def test_openai_bad_model():
-    from openai import OpenAI, BadRequestError, NotFoundError
+    from openai import BadRequestError, NotFoundError
     client = _openai_client()
     with pytest.raises((BadRequestError, NotFoundError)):
         client.chat.completions.create(
@@ -104,7 +105,6 @@ def test_anthropic_zero_max_tokens():
 
 
 def test_openai_zero_max_tokens():
-    from openai import OpenAI
     client = _openai_client()
     try:
         resp = client.chat.completions.create(

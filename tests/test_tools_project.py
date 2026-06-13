@@ -1,5 +1,6 @@
 """测试 tools/project_tool.py — 项目分析工具。"""
 import pytest
+
 from tools.project_tool import ProjectSummaryTool
 
 
@@ -29,7 +30,7 @@ class TestProjectSummaryTool:
         tool = ProjectSummaryTool()
         result = await tool.execute(path="/nonexistent/dir")
         assert result.success is False
-        assert "不存在" in result.error
+        assert result.error is not None and "不存在" in result.error
 
     @pytest.mark.asyncio
     async def test_summary_metadata(self, sample_project):

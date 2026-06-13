@@ -2,7 +2,9 @@
 name = "totoro-agent"
 version = "0.2.0"
 description = "Totoro Coding Agent — AI-powered coding assistant with tool use"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.15"
+readme = "LICENSE"
+license = { text = "MIT" }
 dependencies = [
     "httpx>=0.27.0",
 ]
@@ -10,9 +12,31 @@ dependencies = [
 [project.optional-dependencies]
 api = ["fastapi>=0.110", "uvicorn>=0.29", "sse-starlette>=2.0"]
 repl = ["prompt_toolkit>=3.0", "rich>=13.0"]
-test = ["pytest>=8.0", "pytest-asyncio>=2.0"]
-all = ["fastapi>=0.110", "uvicorn>=0.29", "sse-starlette>=2.0", "prompt_toolkit>=3.0", "rich>=13.0", "pytest>=8.0", "pytest-asyncio>=2.0"]
+test = ["pytest>=8.0", "pytest-asyncio>=1.4.0"]
+lint = ["ruff>=0.5.0", "mypy>=1.15"]
+dev = [
+    "fastapi>=0.110", "uvicorn>=0.29", "sse-starlette>=2.0",
+    "prompt_toolkit>=3.0", "rich>=13.0",
+    "pytest>=8.0", "pytest-asyncio>=1.4.0",
+    "ruff>=0.5.0", "mypy>=1.15",
+]
 
+[project.scripts]
+totoro = "longcat_agent:main"
+totoro-repl = "cli.repl:main"
+
+# ─── uv ───────────────────────────────────────────────────
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.0",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.5.0",
+    "mypy>=1.15",
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+]
+
+# ─── pytest ────────────────────────────────────────────────
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "strict"
@@ -21,6 +45,114 @@ markers = [
     "integration: marks integration tests requiring network",
 ]
 
-[project.scripts]
-totoro = "longcat_agent:main"
-totoro-repl = "cli.repl:main"
+# ─── ruff ──────────────────────────────────────────────────
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = [".", "tests", "evals"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes - unused imports, variables
+    "I",   # isort
+    "B",   # bugbear
+    "SIM", # simplify
+    "UP",  # pyupgrade
+    "C4",  # comprehensions
+    "TCH", # type-checking imports
+    "RUF", # ruff-specific
+    "N",   # pep8-naming
+    "S",   # bandit (security)
+    "A",   # builtins shadowing
+    "ARG", # unused arguments
+    "DTZ", # datetime timezone
+    "ICN", # import conventions
+    "PIE", # misc
+    "PT",  # pytest style
+    "SLF", # self logging
+    "TID", # tidy imports
+    "YTT", # sys.version
+    "ISC", # implicit string concatenation
+    "PTH", # use pathlib
+    "G",   # logging format
+    "LOG", # logging rules
+]
+extend-ignore = [
+    "RUF001", # full-width chars in Chinese text — not a real bug
+    "RUF002", # ambiguous unicode in Chinese docstrings — not a real bug
+    "RUF003", # full-width chars in Chinese comments — not a real bug
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "S101",  # assert (needed in tests)
+    "SLF001", # private member access (needed for testing internals)
+    "B008",  # do not perform function call in argument defaults
+    "RUF005", # collection literal concatenation
+    "ARG002", # unused method argument (self in protocols)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "S101",   # assert in tests
+    "SLF001", # private member access
+    "TCH001", # don't restrict type imports in tests
+    "TCH002",
+    "TCH003",
+    "ARG001", # unused function arg
+    "ARG002", # unused method argument
+    "N806",   # non-lowercase variable in function
+    "F841",   # unused variable (fixtures)
+    "B018",   # useless expression
+    "F811",   # redefined (fixtures)
+    "A001",   # shadowing builtin
+    "UP007",  # Union syntax (some need Optional)
+    "RUF001", # full-width chars in test strings
+    "RUF002", # ambiguous unicode in test docstrings
+]
+"longcat_agent.py" = ["ALL"]
+"longcat_agent_openai.py" = ["ALL"]
+"evals/**/*.py" = ["ALL"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["agent", "providers", "tools", "sandbox", "cli", "api", "config"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+# ─── mypy ──────────────────────────────────────────────────
+[tool.mypy]
+python_version = "3.11"
+strict = false
+warn_return_any = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+check_untyped_defs = true
+no_implicit_optional = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+disallow_any_generics = false
+
+[[tool.mypy.overrides]]
+module = "evals.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "longcat_agent.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "longcat_agent_openai.*"
+ignore_errors = true

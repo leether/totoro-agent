@@ -1,8 +1,6 @@
 """共享 fixtures — 为所有测试提供公共 mock 和临时目录。"""
-import os
 import tempfile
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -11,12 +9,10 @@ from providers.base import (
     ChatProvider,
     ChatResponse,
     StreamEvent,
-    ToolCall,
-    ToolCallDefinition,
     TokenUsage,
+    ToolCall,
 )
 from tools.registry import ToolRegistry
-
 
 # ─── 临时目录 ─────────────────────────────────────────────
 
