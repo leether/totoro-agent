@@ -29,7 +29,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["agent", "providers", "tools", "sandbox", "cli", "config.py", "evals", "test_smoke.py", "longcat_agent.py", "longcat_agent_openai.py"]
+packages = ["agent", "providers", "tools", "sandbox", "cli", "config.py", "evals"]
 
 [dependency-groups]
 dev = [
@@ -104,7 +104,9 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = [
     "S101",   # assert in tests
+    "S108",   # /tmp/ paths in tests
     "S603",   # subprocess calls in tests
+    "S607",   # partial executable path in tests (git, etc.)
     "SLF001", # private member access
     "TCH001", # don't restrict type imports in tests
     "TCH002",
@@ -119,9 +121,9 @@ ignore = [
     "UP007",  # Union syntax (some need Optional)
     "RUF001", # full-width chars in test strings
     "RUF002", # ambiguous unicode in test docstrings
+    "RUF059", # unused unpacked variable in tests
+    "SIM105", # contextlib.suppress in tests
 ]
-"longcat_agent.py" = ["ALL"]
-"longcat_agent_openai.py" = ["ALL"]
 "evals/**/*.py" = ["ALL"]
 
 [tool.ruff.lint.isort]
@@ -138,7 +140,7 @@ line-ending = "lf"
 # ─── pytest-cov ─────────────────────────────────────────
 [tool.coverage.run]
 source = ["agent", "providers", "tools", "sandbox", "cli", "config.py", "api"]
-omit = ["tests/*", "evals/*", "longcat_agent*.py"]
+omit = ["tests/*", "evals/*"]
 
 [tool.coverage.report]
 show_missing = true
@@ -176,12 +178,4 @@ disallow_any_generics = false
 
 [[tool.mypy.overrides]]
 module = "evals.*"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "longcat_agent.*"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "longcat_agent_openai.*"
 ignore_errors = true

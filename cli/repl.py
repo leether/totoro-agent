@@ -244,6 +244,9 @@ def _ask_user(prompt: str) -> str:
 
     asyncio 事件循环在 Unix 上会把 stdin 设为非阻塞，而内置 :func:`input`
     需要阻塞 stdin，否则读取到的字节不完整会抛出 UnicodeDecodeError。
+
+    如果读到非法 utf-8 字节（终端控制序列、粘贴的二进制等），
+    用 errors="replace" 兜底，而不是直接崩溃。
     """
     stdin_fd = sys.stdin.fileno()
     was_nonblocking = False
@@ -253,6 +256,10 @@ def _ask_user(prompt: str) -> str:
         os.set_blocking(stdin_fd, True)
     try:
         return Prompt.ask(prompt)
+    except UnicodeDecodeError:
+        # 终端输入了非法字节序列（ANSI escape、粘贴的二进制等），
+        # 返回空字符串让 REPL 继续运行而不是崩溃。
+        return ""
     finally:
         if was_nonblocking:
             with contextlib.suppress(OSError):
@@ -273,6 +280,10 @@ async def run_repl(settings: AgentSettings, project_path: str = ".") -> None:
             user_input = user_input.strip()
         except (EOFError, KeyboardInterrupt):
             _console.print("\n[dim]Bye![/]")
+            break
+        except OSError as e:
+            # stdin 管道异常（管道关闭、文件描述符无效等）
+            _console.print(f"\n[bold {ERROR_COLOR}]⚠️ 输入异常: {e}[/]")
             break
 
         if not user_input:
