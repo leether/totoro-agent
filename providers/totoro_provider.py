@@ -33,7 +33,7 @@ class TotoroProvider:
         model: str = "LongCat-2.0-Preview",
         timeout: int = 120,
     ):
-        self._api_key = api_key or os.environ.get("TOTORO_API_KEY", "")
+        self._api_key = api_key or os.environ.get("LONGCAT_API_KEY", "")
         base = base_url or os.environ.get("TOTORO_BASE_URL", "https://api.longcat.chat/anthropic")
         # 确保 base_url 以 / 结尾
         self._base_url = base.rstrip("/") + "/v1/messages"

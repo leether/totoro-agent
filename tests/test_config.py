@@ -21,7 +21,7 @@ class TestAgentSettings:
         assert settings.resolve_provider() == "openai"
 
     def test_totoro_config(self, monkeypatch):
-        monkeypatch.setenv("TOTORO_API_KEY", "my_key")
+        monkeypatch.setenv("LONGCAT_API_KEY", "my_key")
         from config import AgentSettings
 
         settings = AgentSettings()

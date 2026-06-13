@@ -14,7 +14,7 @@ if os.path.exists(_env_file):
             _k, _v = _line.split("=", 1)
             os.environ.setdefault(_k.strip(), _v.strip())
 
-API_KEY = os.environ["TOTORO_API_KEY"]
+API_KEY = os.environ["LONGCAT_API_KEY"]
 MODEL = "LongCat-2.0-Preview"
 
 

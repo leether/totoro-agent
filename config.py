@@ -19,7 +19,7 @@ if _env_file.exists():
 class TotoroConfig:
     """Totoro 后端配置。"""
 
-    api_key: str = field(default_factory=lambda: os.environ.get("TOTORO_API_KEY", ""))
+    api_key: str = field(default_factory=lambda: os.environ.get("LONGCAT_API_KEY", ""))
     base_url: str = "https://api.longcat.chat/anthropic"
     model: str = "LongCat-2.0-Preview"
 

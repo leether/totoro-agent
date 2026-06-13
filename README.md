@@ -39,7 +39,7 @@ git clone https://github.com/leether/totoro-agent.git && cd totoro-agent
 pip install -e ".[repl]"
 
 # Configure API key
-echo 'TOTORO_API_KEY=your_key_here' > .env
+echo 'LONGCAT_API_KEY=your_key_here' > .env
 
 # Launch REPL
 python -m cli.repl .
@@ -116,7 +116,7 @@ git clone https://github.com/leether/totoro-agent.git && cd totoro-agent
 pip install -e ".[repl]"
 
 # 配置 API 密钥
-echo 'TOTORO_API_KEY=你的密钥' > .env
+echo 'LONGCAT_API_KEY=你的密钥' > .env
 
 # 启动 REPL
 python -m cli.repl .

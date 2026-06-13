@@ -3,7 +3,7 @@ name = "totoro-agent"
 version = "0.2.0"
 description = "Totoro Coding Agent — AI-powered coding assistant with tool use"
 requires-python = ">=3.11,<3.15"
-readme = "LICENSE"
+readme = "README.md"
 license = { text = "MIT" }
 dependencies = [
     "httpx>=0.27.0",
@@ -24,11 +24,19 @@ dev = [
 ]
 
 [project.scripts]
-totoro = "longcat_agent:main"
+totoro = "cli.main:main"
 totoro-repl = "cli.repl:main"
 
 # ─── uv ───────────────────────────────────────────────────
 [tool.uv]
+package = true
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["agent", "providers", "tools", "sandbox", "cli", "config.py", "evals", "test_smoke.py", "longcat_agent.py", "longcat_agent_openai.py"]
 dev-dependencies = [
     "pytest>=8.0",
     "pytest-asyncio>=1.4.0",

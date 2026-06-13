@@ -1,1 +1,1 @@
-"""CLI 层 — REPL 交互 + 命令行入口。"""
+"""Totoro Agent CLI 工具集。"""

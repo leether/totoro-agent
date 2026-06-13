@@ -174,7 +174,7 @@ def session():
 @pytest.fixture
 def mock_env(monkeypatch):
     """设置测试环境变量。"""
-    monkeypatch.setenv("TOTORO_API_KEY", "test_key_totoro")
+    monkeypatch.setenv("LONGCAT_API_KEY", "test_key_totoro")
     monkeypatch.setenv("OPENAI_API_KEY", "test_key_openai")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test_key_anthropic")
     monkeypatch.setenv("AGENT_PROVIDER", "totoro")
