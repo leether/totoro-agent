@@ -1,4 +1,4 @@
-# LongCat Coding Agent — 架构设计文档
+# Totoro Coding Agent — 架构设计文档
 
 > 版本：v1.0 | 日期：2026-06-12 | 状态：设计稿
 
@@ -71,7 +71,7 @@
 ## 3. 目录结构
 
 ```
-longcat-agent/
+totoro-agent/
 ├── agent/                          # 核心 Agent 引擎
 │   ├── __init__.py
 │   ├── engine.py                   # AgentEngine — 主入口，编排整个流程

@@ -1,4 +1,4 @@
-"""LongCat Provider — 基于 httpx 的纯 Python 实现，无 pydantic_core 依赖。
+"""Totoro Provider — 基于 httpx 的纯 Python 实现，无 pydantic_core 依赖。
 
 LongCat API 兼容 Anthropic 的 /v1/messages 接口格式，直接 HTTP 调用。
 """
@@ -20,8 +20,8 @@ from providers.base import (
 )
 
 
-class LongCatProvider:
-    """LongCat 提供者 — 兼容 Anthropic /v1/messages API。"""
+class TotoroProvider:
+    """Totoro 提供者 — 兼容 Anthropic /v1/messages API。"""
 
     def __init__(
         self,
@@ -30,8 +30,8 @@ class LongCatProvider:
         model: str = "LongCat-2.0-Preview",
         timeout: int = 120,
     ):
-        self._api_key = api_key or os.environ.get("LONGCAT_API_KEY", "")
-        base = base_url or os.environ.get("LONGCAT_BASE_URL", "https://api.longcat.chat/anthropic")
+        self._api_key = api_key or os.environ.get("TOTORO_API_KEY", "")
+        base = base_url or os.environ.get("TOTORO_BASE_URL", "https://api.longcat.chat/anthropic")
         # 确保 base_url 以 / 结尾
         self._base_url = base.rstrip("/") + "/v1/messages"
         self._model = model
@@ -243,4 +243,4 @@ class LongCatProvider:
     # ---------- Provider 协议：让 Registry 能实例化 ----------
 
     def __repr__(self) -> str:
-        return f"LongCatProvider(model={self._model})"
+        return f"TotoroProvider(model={self._model})"

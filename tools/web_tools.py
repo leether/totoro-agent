@@ -33,7 +33,7 @@ class WebSearchTool(BaseTool):
         # 使用 DuckDuckGo 即时回答 API
         url = f"https://api.duckduckgo.com/?q={urllib.parse.quote(query)}&format=json&no_html=1&skip_disambig=1"
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "longcat-agent/1.0"})
+            req = urllib.request.Request(url, headers={"User-Agent": "totoro-agent/1.0"})
             with urllib.request.urlopen(req, timeout=15) as resp:
                 import json
                 data = json.loads(resp.read().decode("utf-8"))
@@ -81,7 +81,7 @@ class WebFetchTool(BaseTool):
 
     async def execute(self, *, url: str) -> ToolResult:
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "longcat-agent/1.0"})
+            req = urllib.request.Request(url, headers={"User-Agent": "totoro-agent/1.0"})
             with urllib.request.urlopen(req, timeout=15) as resp:
                 content = resp.read().decode("utf-8", errors="replace")
 

@@ -1,4 +1,4 @@
-# 🐱 LongCat Coding Agent
+# 🐾 Totoro Coding Agent
 
 <div align="center">
 
@@ -15,7 +15,7 @@
 
 ## English
 
-A **general-purpose Coding Agent** built from scratch — not a wrapper around an existing framework. It features a full agentic loop with 10+ built-in tools, multi-provider LLM support (LongCat / OpenAI / Anthropic), a Rich-powered terminal UI, and a cleanly architected codebase ready for extension.
+A **general-purpose Coding Agent** built from scratch — not a wrapper around an existing framework. It features a full agentic loop with 10+ built-in tools, multi-provider LLM support (Totoro / OpenAI / Anthropic), a Rich-powered terminal UI, and a cleanly architected codebase ready for extension.
 
 ### ✨ Features
 
@@ -33,13 +33,13 @@ A **general-purpose Coding Agent** built from scratch — not a wrapper around a
 
 ```bash
 # Clone
-git clone https://github.com/leether/longcat-agent.git && cd longcat-agent
+git clone https://github.com/leether/totoro-agent.git && cd totoro-agent
 
 # Install dependencies
 pip install -e ".[repl]"
 
 # Configure API Key
-echo 'LONGCAT_API_KEY=your_key_here' > .env
+echo 'TOTORO_API_KEY=your_key_here' > .env
 
 # Launch REPL
 python -m cli.repl .
@@ -48,9 +48,9 @@ python -m cli.repl .
 ### 📁 Project Structure
 
 ```
-longcat-agent/
+totoro-agent/
 ├── agent/          # Core Agent engine (agentic loop, context, sessions)
-├── providers/      # LLM backends (LongCat / OpenAI / Anthropic)
+├── providers/      # LLM backends (Totoro / OpenAI / Anthropic)
 ├── tools/          # Built-in tools (file, bash, git, web, project)
 ├── sandbox/        # Safety sandbox (Protocol-based isolation)
 ├── cli/            # Rich REPL terminal interface
@@ -61,10 +61,10 @@ longcat-agent/
 ### 🔧 Usage as Library
 
 ```python
-from providers.longcat_provider import LongCatProvider
+from providers.totoro_provider import TotoroProvider
 from agent.engine import AgentEngine, AgentConfig
 
-provider = LongCatProvider(api_key="your_key")
+provider = TotoroProvider(api_key="your_key")
 engine = AgentEngine.create(provider=provider, tool_preset="full")
 
 # Non-streaming
@@ -92,7 +92,7 @@ See [docs/architecture.md](docs/architecture.md) for full design document includ
 
 ## 中文
 
-一个**从零构建的通用 Coding Agent** —— 不是现有框架的包装。具备完整 agentic 循环、10+ 内置工具、多 Provider 大模型支持（LongCat / OpenAI / Anthropic）、Rich 美化终端 UI，以及易于扩展的整洁架构。
+一个**从零构建的通用 Coding Agent** —— 不是现有框架的包装。具备完整 agentic 循环、10+ 内置工具、多 Provider 大模型支持（Totoro / OpenAI / Anthropic）、Rich 美化终端 UI，以及易于扩展的整洁架构。
 
 ### ✨ 特性
 
@@ -110,13 +110,13 @@ See [docs/architecture.md](docs/architecture.md) for full design document includ
 
 ```bash
 # 克隆
-git clone https://github.com/leether/longcat-agent.git && cd longcat-agent
+git clone https://github.com/leether/totoro-agent.git && cd totoro-agent
 
 # 安装依赖
 pip install -e ".[repl]"
 
 # 配置 API Key
-echo 'LONGCAT_API_KEY=你的密钥' > .env
+echo 'TOTORO_API_KEY=你的密钥' > .env
 
 # 启动 REPL
 python -m cli.repl .
@@ -125,9 +125,9 @@ python -m cli.repl .
 ### 📁 项目结构
 
 ```
-longcat-agent/
+totoro-agent/
 ├── agent/          # 核心 Agent 引擎（agentic 循环、上下文、会话）
-├── providers/      # LLM 后端（LongCat / OpenAI / Anthropic）
+├── providers/      # LLM 后端（Totoro / OpenAI / Anthropic）
 ├── tools/          # 内置工具（文件、Shell、Git、网络、项目分析）
 ├── sandbox/        # 安全沙箱（Protocol 隔离层）
 ├── cli/            # Rich 美化终端交互界面
@@ -138,10 +138,10 @@ longcat-agent/
 ### 🔧 作为库使用
 
 ```python
-from providers.longcat_provider import LongCatProvider
+from providers.totoro_provider import TotoroProvider
 from agent.engine import AgentEngine
 
-provider = LongCatProvider(api_key="你的密钥")
+provider = TotoroProvider(api_key="你的密钥")
 engine = AgentEngine.create(provider=provider, tool_preset="full")
 
 # 非流式

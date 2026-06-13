@@ -16,9 +16,9 @@ if _env_file.exists():
 
 
 @dataclass
-class LongCatConfig:
-    """LongCat 后端配置。"""
-    api_key: str = field(default_factory=lambda: os.environ.get("LONGCAT_API_KEY", ""))
+class TotoroConfig:
+    """Totoro 后端配置。"""
+    api_key: str = field(default_factory=lambda: os.environ.get("TOTORO_API_KEY", ""))
     base_url: str = "https://api.longcat.chat/anthropic"
     model: str = "LongCat-2.0-Preview"
 
@@ -41,14 +41,14 @@ class AnthropicConfig:
 @dataclass
 class AgentSettings:
     """Agent 完整配置。"""
-    provider_name: str = field(default_factory=lambda: os.environ.get("AGENT_PROVIDER", "longcat"))
+    provider_name: str = field(default_factory=lambda: os.environ.get("AGENT_PROVIDER", "totoro"))
     max_iterations: int = 50
     max_tokens: int = 4096
     temperature: float = 0.1
     tool_preset: str = "full"
     session_dir: str = ".workbuddy/sessions"
 
-    longcat: LongCatConfig = field(default_factory=LongCatConfig)
+    totoro: TotoroConfig = field(default_factory=TotoroConfig)
     openai: OpenAIConfig = field(default_factory=OpenAIConfig)
     anthropic: AnthropicConfig = field(default_factory=AnthropicConfig)
 

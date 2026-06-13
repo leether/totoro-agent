@@ -21,7 +21,7 @@ from rich.markdown import Markdown
 from agent.context import Session
 from agent.engine import AgentEngine, AgentConfig
 from config import AgentSettings
-from providers.longcat_provider import LongCatProvider
+from providers.totoro_provider import TotoroProvider
 from providers.openai_provider import OpenAIProvider
 from providers.anthropic_provider import AnthropicProvider
 from tools.registry import ToolRegistry
@@ -82,7 +82,7 @@ def _display_welcome(settings: AgentSettings, project_path: str) -> None:
 
     panel = Panel(
         table,
-        title="[bold]  🐱 LongCat Coding Agent[/]",
+        title="[bold]  🐾 Totoro Coding Agent[/]",
         subtitle="[dim]/q 退出 | /reset 重置 | /tools 工具 | /session 会话[/]",
         border_style=AGENT_COLOR,
         padding=(1, 2),
@@ -92,8 +92,8 @@ def _display_welcome(settings: AgentSettings, project_path: str) -> None:
 
 def _get_model(settings: AgentSettings) -> str:
     provider = settings.resolve_provider()
-    if provider == "longcat":
-        return settings.longcat.model
+    if provider == "totoro":
+        return settings.totoro.model
     elif provider == "openai":
         return settings.openai.model
     elif provider == "anthropic":
@@ -140,11 +140,11 @@ def _display_thinking() -> None:
 def _build_provider(settings: AgentSettings):
     """根据配置构建 provider。"""
     name = settings.resolve_provider()
-    if name == "longcat":
-        return LongCatProvider(
-            api_key=settings.longcat.api_key,
-            base_url=settings.longcat.base_url,
-            model=settings.longcat.model,
+    if name == "totoro":
+        return TotoroProvider(
+            api_key=settings.totoro.api_key,
+            base_url=settings.totoro.base_url,
+            model=settings.totoro.model,
         )
     elif name == "openai":
         return OpenAIProvider(

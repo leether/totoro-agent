@@ -16,7 +16,7 @@ from tools.registry import ToolRegistry
 
 
 DEFAULT_SYSTEM_PROMPT = """\
-You are LongCat Coding Agent, an expert software engineer and coding assistant.
+You are Totoro Coding Agent, an expert software engineer and coding assistant.
 
 ## Capabilities
 - Read, write, and edit files in the project
