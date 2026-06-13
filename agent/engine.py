@@ -355,9 +355,7 @@ class AgentEngine:
                         "type": "function",
                         "function": {
                             "name": tool_call.name,
-                            "arguments": json.dumps(
-                                tool_call.arguments, ensure_ascii=False
-                            ),
+                            "arguments": json.dumps(tool_call.arguments, ensure_ascii=False),
                         },
                     }
                 )
